@@ -3,148 +3,170 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>GoIndex Extended — Live Preview</title>
-<script>
-// If opened as file://, redirect to localhost server
-if (location.protocol === 'file:') {
-  location.href = 'http://localhost:5600/preview.html';
-}
-</script>
+<title>Drive Base</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --bg:#121212;--surface:#1e1e1e;--surface2:#2a2a2a;--surface3:#333;
-  --text:#e0e0e0;--text2:#9e9e9e;--divider:#2e2e2e;
-  --primary:#37474f;--accent:#5e92f3;
-  --folder:#ffa726;--video:#ef5350;--audio:#66bb6a;
-  --image:#ab47bc;--doc:#42a5f5;--pdf:#ef5350;--other:#78909c;
+:root {
+  --bg: #121212; --surface: #1e1e1e; --surface2: #2d2d2d; --surface3: #3d3d3d;
+  --text: #ffffff; --text2: #aaaaaa; --primary: #90caf9; --divider: rgba(255,255,255,0.1);
+  --folder: #81c784; --video: #e57373; --audio: #ffb74d; --image: #ba68c8; --doc: #64b5f6; --other: #90a4ae;
 }
-body{font-family:'Roboto',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Roboto', sans-serif; background: var(--bg); color: var(--text); overflow-x: hidden; }
+
 /* TOPBAR */
-.topbar{background:#263238;display:flex;align-items:center;padding:0 16px;height:56px;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px #0006}
-.topbar .logo{display:flex;align-items:center;gap:8px;flex:1}
-.topbar .logo img{width:28px;border-radius:50%}
-.topbar .logo h1{font-size:1rem;font-weight:500;color:#fff}
-.topbar .version{font-size:.7rem;background:#37474f;color:#b0bec5;padding:2px 8px;border-radius:10px}
-.topbar input{background:rgba(255,255,255,.1);border:none;border-radius:4px;color:#fff;padding:6px 12px;width:240px;font-size:.9rem;outline:none;transition:.2s;margin-left:auto}
-.topbar input::placeholder{color:rgba(255,255,255,.4)}
-.topbar input:focus{background:rgba(255,255,255,.18);width:300px}
-/* DRIVE TABS */
-.tabs{display:flex;background:var(--surface);border-bottom:1px solid var(--divider)}
-.tab{padding:12px 20px;font-size:.85rem;cursor:pointer;color:var(--text2);border-bottom:2px solid transparent;transition:.15s;display:flex;align-items:center;gap:6px;white-space:nowrap}
-.tab:hover{color:var(--text);background:var(--surface2)}
-.tab.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:500}
-.tab .material-icons{font-size:16px}
-/* BREADCRUMB */
-.breadcrumb{display:flex;align-items:center;gap:4px;padding:8px 16px;background:var(--surface);border-bottom:1px solid var(--divider);font-size:.84rem;flex-wrap:wrap}
-.bc-item{color:var(--text2);cursor:pointer;padding:2px 4px;border-radius:2px;transition:.15s}
-.bc-item:hover{color:var(--text)}
-.bc-item.active{color:var(--text);cursor:default}
-.bc-sep{color:var(--divider)}
-/* STATS */
-.stats{display:flex;gap:16px;padding:6px 16px;background:var(--surface2);border-bottom:1px solid var(--divider);font-size:.78rem;color:var(--text2)}
-.stats strong{color:var(--text)}
-/* FILE LIST */
-.list-header{display:grid;grid-template-columns:1fr 100px 170px;padding:8px 16px;font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);border-bottom:1px solid var(--divider);background:var(--surface2)}
-.list{background:var(--surface)}
-.list-row{display:grid;grid-template-columns:1fr 100px 170px;align-items:center;padding:10px 16px;border-bottom:1px solid var(--divider);cursor:pointer;transition:.12s}
-.list-row:hover{background:var(--surface2)}
-.list-row:hover .actions{opacity:1}
-.name{display:flex;align-items:center;gap:10px;min-width:0}
-.name .material-icons{font-size:22px;flex-shrink:0}
-.name span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:.9rem}
-.size,.date{font-size:.8rem;color:var(--text2)}
-.actions{opacity:0;display:flex;gap:2px;margin-left:6px;transition:.15s}
-.actions .material-icons{font-size:17px;color:var(--text2);padding:4px;border-radius:50%}
-.actions .material-icons:hover{background:var(--surface3);color:var(--text)}
-/* STATE */
-.state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:70px 16px;gap:14px;color:var(--text2);text-align:center}
-.spinner{width:36px;height:36px;border:3px solid var(--surface3);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-.error-box{background:#b71c1c22;border:1px solid #b71c1c55;border-radius:6px;padding:14px 18px;max-width:500px;font-size:.85rem;color:#ef9a9a;line-height:1.6}
-/* FOOTER */
-footer{text-align:center;padding:18px;font-size:.75rem;color:var(--text2);border-top:1px solid var(--divider);margin-top:auto}
-footer a{color:var(--accent);text-decoration:none}
-/* SCROLLBAR */
-::-webkit-scrollbar{width:5px;height:5px}
-::-webkit-scrollbar-track{background:var(--bg)}
-::-webkit-scrollbar-thumb{background:var(--surface3);border-radius:3px}
-@media(max-width:640px){
-  .list-header,.list-row{grid-template-columns:1fr 80px}
-  .list-header span:last-child,.date{display:none}
-  .topbar input{width:130px}.topbar input:focus{width:160px}
-}
+.topbar { background: var(--surface); padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--divider); position: sticky; top: 0; z-index: 100; }
+.logo { display: flex; align-items: center; gap: 10px; font-weight: 500; font-size: 1.1rem; }
+.logo-icon { background: #fff; border-radius: 50%; padding: 4px; display: grid; place-items: center; }
+.badge { background: var(--surface3); font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; color: var(--text2); }
+.top-actions { display: flex; align-items: center; gap: 16px; }
+.search-box { position: relative; }
+.search-box .material-icons { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text2); font-size: 18px; }
+.search-box input { background: var(--surface2); border: 1px solid var(--divider); color: var(--text); padding: 8px 12px 8px 36px; border-radius: 6px; outline: none; width: 200px; transition: 0.2s; font-family: inherit; }
+.search-box input:focus { width: 260px; border-color: var(--primary); background: var(--surface3); }
+.settings-btn { background: var(--surface2); border: 1px solid var(--divider); color: var(--text); padding: 8px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; transition: 0.2s; }
+.settings-btn:hover { background: var(--surface3); }
+
+/* MAIN */
+.main { max-width: 1200px; margin: 0 auto; padding: 24px; }
+.toolbar { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 16px; }
+.breadcrumb { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; font-size: 0.95rem; }
+.bc-item { cursor: pointer; color: var(--text2); transition: 0.2s; display: flex; align-items: center; gap: 4px; }
+.bc-item:hover { color: var(--text); }
+.bc-item.active { color: var(--text); font-weight: 500; pointer-events: none; }
+.bc-sep { color: var(--surface3); }
+.stats { font-size: 0.85rem; color: var(--text2); display: flex; gap: 12px; }
+
+/* LIST */
+.list-header { display: grid; grid-template-columns: 1fr 100px 150px; gap: 16px; padding: 0 16px 8px; font-size: 0.75rem; font-weight: 500; color: var(--text2); border-bottom: 1px solid var(--divider); margin-bottom: 8px; }
+.list { display: flex; flex-direction: column; }
+.list-row { display: grid; grid-template-columns: 1fr 100px 150px; gap: 16px; padding: 12px 16px; align-items: center; border-radius: 6px; cursor: pointer; transition: 0.15s; border-bottom: 1px solid transparent; }
+.list-row:hover { background: var(--surface); border-bottom-color: var(--divider); }
+.name { display: flex; align-items: center; gap: 12px; font-size: 0.9rem; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.name span:nth-child(2) { overflow: hidden; text-overflow: ellipsis; }
+.size, .date { font-size: 0.8rem; color: var(--text2); }
+.state { padding: 48px; text-align: center; color: var(--text2); display: flex; flex-direction: column; align-items: center; gap: 16px; }
+.spinner { width: 32px; height: 32px; border: 3px solid var(--surface3); border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
 /* FILE PANEL */
-.panel-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:300;display:none;backdrop-filter:blur(2px)}
-.panel-overlay.open{display:block}
-.panel{position:fixed;right:0;top:0;height:100vh;width:420px;max-width:95vw;background:var(--surface);z-index:301;transform:translateX(100%);transition:.3s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;box-shadow:-4px 0 24px #0008}
-.panel.open{transform:translateX(0)}
-.panel-head{background:#263238;padding:16px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;border-bottom:1px solid var(--divider)}
-.panel-head h3{font-size:.9rem;color:#fff;font-weight:500;word-break:break-word;line-height:1.4}
-.panel-close{color:rgba(255,255,255,.7);cursor:pointer;font-size:20px;flex-shrink:0;margin-top:2px;transition:.15s}
-.panel-close:hover{color:#fff}
-.panel-body{padding:16px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:14px}
-.panel-meta{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font-size:.82rem;background:var(--surface2);border-radius:6px;padding:12px}
-.panel-meta .lbl{color:var(--text2)}
-.panel-meta .val{color:var(--text);word-break:break-all}
-.link-block{background:var(--surface2);border-radius:6px;overflow:hidden;border:1px solid var(--divider)}
-.link-block-head{display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--surface3);font-size:.8rem;font-weight:500;color:var(--text)}
-.link-block-head .material-icons{font-size:18px}
-.link-block-head.stream{color:#66bb6a}
-.link-block-head.download{color:#42a5f5}
-.link-box{display:flex;align-items:center;gap:6px;padding:8px 10px}
-.link-url{flex:1;font-size:.72rem;color:var(--text2);word-break:break-all;font-family:monospace;background:var(--surface);border-radius:4px;padding:6px 8px;border:1px solid var(--divider);max-height:60px;overflow:auto}
-.copy-btn{background:var(--surface3);border:none;color:var(--text);padding:6px 10px;border-radius:4px;cursor:pointer;font-size:.75rem;display:flex;align-items:center;gap:4px;white-space:nowrap;transition:.15s;flex-shrink:0}
-.copy-btn:hover{background:#455a64;color:#fff}
-.copy-btn .material-icons{font-size:15px}
-.copy-btn.copied{background:#2e7d32;color:#fff}
-.action-btns{display:flex;gap:8px;flex-wrap:wrap}
-.action-btn{flex:1;min-width:120px;display:flex;align-items:center;justify-content:center;gap:6px;padding:10px;border-radius:6px;border:none;cursor:pointer;font-size:.85rem;font-weight:500;transition:.15s}
-.action-btn.stream-btn{background:linear-gradient(135deg,#2e7d32,#388e3c);color:#fff}
-.action-btn.stream-btn:hover{background:linear-gradient(135deg,#388e3c,#43a047)}
-.action-btn.dl-btn{background:linear-gradient(135deg,#1565c0,#1976d2);color:#fff}
-.action-btn.dl-btn:hover{background:linear-gradient(135deg,#1976d2,#1e88e5)}
-.action-btn.drive-btn{background:var(--surface3);color:var(--text)}
-.action-btn.drive-btn:hover{background:#455a64;color:#fff}
-.action-btn .material-icons{font-size:18px}
-.warn-note{font-size:.73rem;color:var(--text2);background:rgba(255,193,7,.08);border:1px solid rgba(255,193,7,.2);border-radius:4px;padding:8px 10px;line-height:1.5}
-.warn-note strong{color:#ffc107}
+.panel-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 300; display: none; backdrop-filter: blur(2px); }
+.panel-overlay.open { display: block; }
+.panel { position: fixed; right: 0; top: 0; height: 100vh; width: 420px; max-width: 95vw; background: var(--surface); z-index: 301; transform: translateX(100%); transition: 0.3s cubic-bezier(0.4,0,0.2,1); display: flex; flex-direction: column; box-shadow: -4px 0 24px rgba(0,0,0,0.5); }
+.panel.open { transform: translateX(0); }
+.panel-head { background: #263238; padding: 16px; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; border-bottom: 1px solid var(--divider); }
+.panel-head h3 { font-size: 0.9rem; color: #fff; font-weight: 500; word-break: break-word; line-height: 1.4; }
+.panel-close { color: rgba(255,255,255,0.7); cursor: pointer; font-size: 20px; flex-shrink: 0; margin-top: 2px; transition: 0.15s; }
+.panel-close:hover { color: #fff; }
+.panel-body { padding: 16px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 14px; }
+.panel-meta { display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; font-size: 0.82rem; background: var(--surface2); border-radius: 6px; padding: 12px; }
+.panel-meta .lbl { color: var(--text2); }
+.panel-meta .val { color: var(--text); word-break: break-all; }
+.link-block { background: var(--surface2); border-radius: 6px; overflow: hidden; border: 1px solid var(--divider); }
+.link-block-head { display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: var(--surface3); font-size: 0.8rem; font-weight: 500; color: var(--text); }
+.link-block-head.stream { color: #66bb6a; }
+.link-block-head.download { color: #42a5f5; }
+.link-box { display: flex; align-items: center; gap: 6px; padding: 8px 10px; }
+.link-url { flex: 1; font-size: 0.72rem; color: var(--text2); word-break: break-all; font-family: monospace; background: var(--surface); border-radius: 4px; padding: 6px 8px; border: 1px solid var(--divider); max-height: 60px; overflow: auto; }
+.copy-btn { background: var(--surface3); border: none; color: var(--text); padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 0.75rem; display: flex; align-items: center; gap: 4px; transition: 0.15s; flex-shrink: 0; }
+.copy-btn:hover { background: #455a64; }
+.copy-btn.copied { background: #2e7d32; color: #fff; }
+.action-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+.action-btn { flex: 1; min-width: 120px; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 10px; border-radius: 6px; border: none; cursor: pointer; font-size: 0.85rem; font-weight: 500; transition: 0.15s; }
+.action-btn.stream-btn { background: linear-gradient(135deg, #2e7d32, #388e3c); color: #fff; }
+.action-btn.dl-btn { background: linear-gradient(135deg, #1565c0, #1976d2); color: #fff; text-decoration: none; }
+.action-btn.drive-btn { background: var(--surface3); color: var(--text); }
+.action-btn.drive-btn:hover { background: #455a64; color: #fff; }
+.warn-note { font-size: 0.73rem; color: var(--text2); background: rgba(255,193,7,0.08); border: 1px solid rgba(255,193,7,0.2); border-radius: 4px; padding: 8px 10px; line-height: 1.5; }
+
+/* SETTINGS MODAL */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 400; display: none; backdrop-filter: blur(3px); justify-content: center; align-items: center; }
+.modal-overlay.open { display: flex; }
+.modal { background: var(--surface); width: 600px; max-width: 95vw; max-height: 90vh; border-radius: 8px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
+.modal-head { padding: 16px 20px; background: var(--surface2); border-bottom: 1px solid var(--divider); display: flex; justify-content: space-between; align-items: center; font-weight: 500; }
+.modal-body { padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; }
+.drive-list { display: flex; flex-direction: column; gap: 10px; }
+.drive-item { background: var(--surface2); padding: 12px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--divider); }
+.drive-item .d-info { display: flex; align-items: center; gap: 10px; }
+.drive-item .d-actions { display: flex; gap: 8px; }
+.btn { padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: 500; display: inline-flex; align-items: center; gap: 6px; transition: 0.2s; color: #fff; }
+.btn-danger { background: #d32f2f; }
+.btn-danger:hover { background: #c62828; }
+.btn-primary { background: var(--primary); color: #000; }
+.btn-primary:hover { opacity: 0.9; }
+.btn-icon { padding: 6px; background: var(--surface3); border-radius: 4px; border: none; color: var(--text); cursor: pointer; display: grid; place-items: center; }
+.btn-icon:hover { background: #d32f2f; color: #fff; }
+.add-drive-form { background: var(--surface2); padding: 16px; border-radius: 6px; border: 1px solid var(--divider); display: none; flex-direction: column; gap: 12px; }
+.add-drive-form.open { display: flex; }
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-group label { font-size: 0.8rem; color: var(--text2); }
+.form-group input { background: var(--surface); border: 1px solid var(--divider); color: var(--text); padding: 10px; border-radius: 4px; outline: none; font-family: monospace; font-size: 0.85rem; }
+.form-group input:focus { border-color: var(--primary); }
+
+/* VIDEO WRAPPER & CONTROLS */
+.video-wrapper { position: relative; width: 100%; background: #000; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.video-wrapper video { width: 100%; max-height: 75vh; outline: none; background: #000; cursor: pointer; transition: 0.2s; }
+.video-wrapper:fullscreen video { max-height: 100vh; }
+.overlay-controls { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); width: 90%; background: rgba(0,0,0,0.7); padding: 16px 24px; border-radius: 12px; display: flex; flex-direction: column; gap: 12px; opacity: 1; transition: opacity 0.3s ease; backdrop-filter: blur(4px); z-index: 50; }
+.overlay-controls .btn-icon { background: transparent; color: #fff; padding: 6px; border-radius: 50%; transition: 0.2s; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center;}
+.overlay-controls .btn-icon:hover { background: rgba(255,255,255,0.2); transform: scale(1.1); }
+.video-wrapper.idle .overlay-controls, .video-wrapper.idle .modal-head { opacity: 0; pointer-events: none; }
+.modal-head { transition: opacity 0.3s ease; }
+
+/* LOCK FEATURE */
+.video-wrapper.locked .overlay-controls, .video-wrapper.locked .modal-head { opacity: 0 !important; pointer-events: none !important; }
+.unlock-btn { position: absolute; left: 24px; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,0.6); color: #fff; border: none; border-radius: 50%; padding: 12px; cursor: pointer; z-index: 60; opacity: 0; pointer-events: none; transition: opacity 0.3s; display: none; }
+.video-wrapper.locked .unlock-btn { display: block; }
+.video-wrapper.locked.idle .unlock-btn { opacity: 0; pointer-events: none; }
+.video-wrapper.locked:not(.idle) .unlock-btn { opacity: 1; pointer-events: auto; }
+
+/* ASPECT RATIO CLASSES */
+.vid-fit-contain { object-fit: contain !important; }
+.vid-fit-cover { object-fit: cover !important; }
+.vid-fit-fill { object-fit: fill !important; }
+
+/* PROGRESS BAR */
+.progress-container { display: flex; align-items: center; gap: 12px; width: 100%; }
+.time-text { color: #fff; font-size: 0.85rem; font-variant-numeric: tabular-nums; min-width: 45px; text-align: center; }
+input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; cursor: pointer; --prog: 0%; --buf: 0%; }
+input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 6px; border-radius: 4px; border: none; background: linear-gradient(to right, var(--primary) var(--prog), rgba(255,255,255,0.4) var(--prog), rgba(255,255,255,0.4) var(--buf), rgba(255,255,255,0.15) var(--buf)); }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 14px; width: 14px; border-radius: 50%; background: var(--primary); margin-top: -4px; box-shadow: 0 0 4px rgba(0,0,0,0.5); transition: 0.1s; }
+input[type=range]:hover::-webkit-slider-thumb { transform: scale(1.2); }
 </style>
 </head>
 <body>
 
-<!-- TOPBAR -->
-<header class="topbar">
+<div class="topbar">
   <div class="logo">
-    <img src="https://raw.githubusercontent.com/cheems/goindex-extended/master/images/favicon-x.png" alt="logo">
-    <h1>GoIndex Extended</h1>
-    <span class="version">v1.4.1</span>
+    <div class="logo-icon" style="background: linear-gradient(135deg, #1e88e5, #42a5f5); padding: 6px; border-radius: 8px;">
+      <svg xmlns="http://www.w3.org/2000/svg" height="20" viewBox="0 0 24 24" width="20" fill="#fff"><path d="M0 0h24v24H0z" fill="none"/><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>
+    </div>
+    Drive Base <span class="badge" style="background: #e3f2fd; color: #1565c0; font-weight: bold;">PRO</span>
+    <div id="trafficMonitor" style="margin-left: 12px; font-size: 0.75rem; color: #4caf50; display: flex; align-items: center; gap: 4px; background: var(--surface2); padding: 4px 8px; border-radius: 4px; border: 1px solid var(--divider);">
+      <span class="material-icons" style="font-size: 14px;">speed</span>
+      <span id="pingText">0 ms</span>
+    </div>
   </div>
-  <input id="searchBox" type="text" placeholder="🔍 Search files…" oninput="onSearch(this.value)">
-</header>
-
-<!-- DRIVE TABS -->
-<div class="tabs" id="tabs">
-  <div class="tab active" onclick="switchDrive(0)"><span class="material-icons">storage</span>Personal Drive</div>
+  <div class="top-actions">
+    <div class="search-box">
+      <span class="material-icons">search</span>
+      <input type="text" placeholder="Search files..." oninput="onSearch(this.value)">
+    </div>
+    <button class="settings-btn" onclick="openSettings()"><span class="material-icons">settings</span></button>
+  </div>
 </div>
 
-<!-- BREADCRUMB -->
-<div class="breadcrumb" id="breadcrumb">
-  <span class="material-icons" style="font-size:15px;color:var(--text2)">home</span>
-  <span class="bc-item active">My Drive</span>
-</div>
-
-<!-- STATS -->
-<div class="stats" id="stats"><span>Loading…</span></div>
-
-<!-- LIST -->
-<div class="list-header">
-  <span>Name</span><span>Size</span><span>Modified</span>
-</div>
-<div class="list" id="list">
-  <div class="state"><div class="spinner"></div><span>Connecting to Google Drive…</span></div>
+<div class="main">
+  <div class="toolbar">
+    <div class="breadcrumb" id="breadcrumb"></div>
+    <div class="stats" id="stats"></div>
+  </div>
+  
+  <div class="list-header">
+    <span>Name</span><span>Size</span><span>Modified</span>
+  </div>
+  <div class="list" id="list"></div>
 </div>
 
 <!-- FILE PANEL -->
@@ -157,45 +179,165 @@ footer a{color:var(--accent);text-decoration:none}
   <div class="panel-body" id="panelBody"></div>
 </div>
 
-<footer>
-  Powered by <a href="https://workers.cloudflare.com/" target="_blank">Cloudflare Workers</a> &amp;
-  <a href="https://www.google.com/drive/" target="_blank">Google Drive API</a> · Made with ❤
-</footer>
+<!-- SETTINGS MODAL -->
+<div class="modal-overlay" id="settingsModal">
+  <div class="modal">
+    <div class="modal-head">
+      <span>Manage Storage Drives</span>
+      <span class="material-icons" style="cursor:pointer" onclick="closeSettings()">close</span>
+    </div>
+    <div class="modal-body">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h3>Connected Drives</h3>
+        <button class="btn btn-primary" onclick="toggleAddForm()"><span class="material-icons">add</span> Add Drive</button>
+      </div>
+      
+      <div class="drive-list" id="driveListUI"></div>
+      
+      <div class="add-drive-form" id="addDriveForm">
+        <h4>Add New Google Drive</h4>
+        <div class="form-group">
+          <label>Drive Name (e.g. Personal, Movies)</label>
+          <input type="text" id="inName" placeholder="My Drive">
+        </div>
+        <div class="form-group">
+          <label>Client ID</label>
+          <input type="text" id="inClientId" placeholder="xxx.apps.googleusercontent.com">
+        </div>
+        <div class="form-group">
+          <label>Client Secret</label>
+          <input type="text" id="inClientSecret" placeholder="GOCSPX-...">
+        </div>
+        <div class="form-group">
+          <label>Refresh Token</label>
+          <input type="text" id="inRefreshToken" placeholder="1//0g...">
+        </div>
+        <div style="display:flex; gap:10px; margin-top:8px;">
+          <button class="btn btn-primary" onclick="saveNewDrive()">Save Drive</button>
+          <button class="btn" style="background:var(--surface3)" onclick="toggleAddForm()">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PLAYER MODAL -->
+<div class="modal-overlay" id="playerModal">
+  <div class="modal" style="width: 900px; max-width: 95vw; background: #000; position: relative;">
+    <div class="video-wrapper" id="videoWrapper" onmousemove="resetIdleTimer()" onclick="resetIdleTimer()">
+      <div class="modal-head" style="position:absolute; top:0; left:0; width:100%; background:linear-gradient(to bottom, rgba(0,0,0,0.8), transparent); border:none; z-index:40;">
+        <span id="playerTitle" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 90%; font-weight: bold; color:#fff; text-shadow: 1px 1px 3px #000;">Media Player</span>
+        <span class="material-icons" style="cursor:pointer; color:#fff;" onclick="closePlayer()">close</span>
+      </div>
+      
+      <div id="playerContainer" style="width:100%;"></div>
+      
+      <button class="unlock-btn" onclick="toggleLock()" title="Unlock"><span class="material-icons" style="font-size:28px">lock</span></button>
+      
+      <div class="overlay-controls" id="overlayControls">
+        <!-- Progress Bar -->
+        <div class="progress-container">
+          <span class="time-text" id="timeCurrent">0:00</span>
+          <input type="range" id="progressBar" min="0" max="100" value="0" step="0.1" oninput="seekVideo(this.value)">
+          <span class="time-text" id="timeDuration">0:00</span>
+        </div>
+        
+        <!-- Controls Row -->
+        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+          <div style="display: flex; gap: 12px; align-items: center;">
+            <button class="btn-icon" onclick="togglePlay()" title="Play/Pause"><span class="material-icons" id="playBtnIcon" style="font-size:32px">pause</span></button>
+            <button class="btn-icon" onclick="playSibling(-1)" title="Previous Media"><span class="material-icons" style="font-size:26px">skip_previous</span></button>
+            <button class="btn-icon" onclick="skipMedia(-10)" title="Rewind 10s"><span class="material-icons" style="font-size:26px">replay_10</span></button>
+            <button class="btn-icon" onclick="skipMedia(10)" title="Forward 10s"><span class="material-icons" style="font-size:26px">forward_10</span></button>
+            <button class="btn-icon" onclick="playSibling(1)" title="Next Media"><span class="material-icons" style="font-size:26px">skip_next</span></button>
+          </div>
+          <div style="display: flex; gap: 12px; align-items: center;">
+            <button class="btn-icon" onclick="cycleAspect()" title="Aspect Ratio"><span class="material-icons" id="aspectIcon" style="font-size:24px">aspect_ratio</span></button>
+            <button class="btn-icon" onclick="toggleMute()" title="Mute"><span class="material-icons" id="muteBtnIcon" style="font-size:26px">volume_up</span></button>
+            <button class="btn-icon" onclick="toggleLock()" title="Lock Screen"><span class="material-icons" style="font-size:24px">lock_open</span></button>
+            <button class="btn-icon" onclick="toggleFullscreen()" title="Fullscreen"><span class="material-icons" style="font-size:28px">fullscreen</span></button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
 <script>
-// ── CONFIG ────────────────────────────────────────────────────────────────────
-// Auth is handled by the proxy server (app.py / server.py)
+const PROXY = location.hostname === 'localhost' ? 'http://localhost:7860' : '';
 const FOLDER_MIME = 'application/vnd.google-apps.folder';
-// Auto-detect: empty = same origin (HF Spaces), or localhost:5600 for local dev
-const PROXY = location.hostname === 'localhost' ? 'http://localhost:5600' : '';
 
-// ── STATE ─────────────────────────────────────────────────────────────────────
-let accessToken = null;
-let tokenExpiry = 0;
-let navStack = [];
+let drives = [];
+let currentDriveId = null; 
+let navStack = []; // [{id, name, isDriveRoot}]
 let allFiles = [];
 
-// ── AUTH (via local proxy /token) ─────────────────────────────────────────────
-async function getToken() {
-  if (accessToken && Date.now() < tokenExpiry) return accessToken;
+// ── INIT ─────────────────────────────────────────────────────────────
+async function init() {
+  await fetchDrives();
+  renderRootDrives();
+}
+
+// ── DRIVES API ───────────────────────────────────────────────────────
+async function fetchDrives() {
   try {
-    const r = await fetch(`${PROXY}/token`);
+    const r = await fetch(`${PROXY}/drives`);
+    drives = await r.json();
+  } catch(e) { console.error("Failed to load drives", e); }
+}
+
+async function saveNewDrive() {
+  const btn = event.target;
+  btn.textContent = 'Saving...';
+  try {
+    const body = {
+      name: document.getElementById('inName').value,
+      client_id: document.getElementById('inClientId').value,
+      client_secret: document.getElementById('inClientSecret').value,
+      refresh_token: document.getElementById('inRefreshToken').value
+    };
+    const r = await fetch(`${PROXY}/drives`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(body)
+    });
     const d = await r.json();
-    if (d.error) throw new Error(d.error);
-    accessToken = d.access_token;
-    tokenExpiry = Date.now() + 50 * 60 * 1000; // ~50 min
-    return accessToken;
+    if(d.error) throw new Error(d.error);
+    
+    alert('Drive Added!');
+    document.getElementById('inName').value = '';
+    document.getElementById('inClientId').value = '';
+    document.getElementById('inClientSecret').value = '';
+    document.getElementById('inRefreshToken').value = '';
+    toggleAddForm();
+    await fetchDrives();
+    renderSettingsDrives();
+    if(!currentDriveId) renderRootDrives();
   } catch(e) {
-    showError('Auth failed: ' + e.message + '<br>Make sure <strong>server.py</strong> is running!');
-    throw e;
+    alert('Error: ' + e.message);
+  } finally {
+    btn.textContent = 'Save Drive';
   }
 }
 
-// ── API (all via proxy) ────────────────────────────────────────────────────────────
-async function apiGet(path, queryParams) {
-  // All Google Drive API calls go through our local proxy /api
+async function deleteDrive(id) {
+  if(!confirm('Remove this drive?')) return;
+  try {
+    await fetch(`${PROXY}/drives/${id}`, {method: 'DELETE'});
+    await fetchDrives();
+    renderSettingsDrives();
+    if(currentDriveId === id) {
+      navStack = []; currentDriveId = null; renderRootDrives();
+    } else if(!currentDriveId) {
+      renderRootDrives();
+    }
+  } catch(e) { alert(e.message); }
+}
+
+// ── API HELPERS ──────────────────────────────────────────────────────
+async function apiGet(driveId, path, queryParams) {
   const params = new URLSearchParams(queryParams || {});
-  const url = `${PROXY}/api${path}${params.toString() ? '?' + params : ''}`;
+  const url = `${PROXY}/api/${driveId}${path}${params.toString() ? '?' + params : ''}`;
   const r = await fetch(url);
   if (!r.ok) {
     const d = await r.json().catch(()=>({}));
@@ -204,13 +346,54 @@ async function apiGet(path, queryParams) {
   return r.json();
 }
 
+// ── UI RENDERING ─────────────────────────────────────────────────────
+function renderRootDrives() {
+  currentDriveId = null;
+  navStack = [];
+  renderBreadcrumb();
+  document.getElementById('stats').innerHTML = `<span><strong>${drives.length}</strong> Drives connected</span>`;
+  
+  if (drives.length === 0) {
+    document.getElementById('list').innerHTML = `
+      <div class="state">
+        <span class="material-icons" style="font-size:48px;color:var(--surface3)">cloud_off</span>
+        <span>No drives added. Click Settings (⚙) to add your Google Drive.</span>
+      </div>`;
+    return;
+  }
+  
+  document.getElementById('list').innerHTML = drives.map((d, i) => `
+    <div class="list-row" onclick="openDriveRoot('${d.id}', '${d.name.replace(/'/g,"\\'")}')">
+      <div class="name">
+        <span class="material-icons" style="color:var(--primary)">cloud</span>
+        <span style="font-weight:500">${d.name}</span>
+      </div>
+      <div class="size">—</div>
+      <div class="date">—</div>
+    </div>
+  `).join('');
+}
+
+async function openDriveRoot(id, name) {
+  currentDriveId = id;
+  try {
+    showLoading(`Connecting to ${name}…`);
+    const data = await apiGet(id, '/drive/v3/files/root', {fields:'id,name'});
+    navStack = [{id: data.id, name: name, isDriveRoot: true}];
+    renderBreadcrumb();
+    await listFolder(data.id);
+  } catch(e) {
+    showError(`Failed to connect to ${name}: ` + e.message);
+  }
+}
+
 async function listFolder(folderId) {
   showLoading('Loading files…');
   try {
-    const data = await apiGet('/drive/v3/files', {
+    const data = await apiGet(currentDriveId, '/drive/v3/files', {
       q: `'${folderId}' in parents and trashed=false`,
       orderBy: 'folder,name',
-      pageSize: '500',
+      pageSize: '1000',
       fields: 'files(id,name,mimeType,size,modifiedTime)'
     });
     allFiles = data.files || [];
@@ -221,34 +404,15 @@ async function listFolder(folderId) {
   }
 }
 
-async function listRoot() {
-  try {
-    const data = await apiGet('/drive/v3/files/root', {fields:'id,name'});
-    navStack = [{id: data.id, name: 'My Drive'}];
-    renderBreadcrumb();
-    await listFolder(data.id);
-  } catch(e) {
-    showError('Failed to connect: ' + e.message);
-  }
-}
-
-// ── RENDER ────────────────────────────────────────────────────────────────────
 const iconMap = {
-  [FOLDER_MIME]: {icon:'folder',color:'var(--folder)'},
-  'video/mp4':   {icon:'videocam',color:'var(--video)'},
-  'video/x-matroska':{icon:'videocam',color:'var(--video)'},
-  'video/':      {icon:'videocam',color:'var(--video)'},
-  'audio/':      {icon:'audiotrack',color:'var(--audio)'},
-  'image/':      {icon:'image',color:'var(--image)'},
-  'application/pdf':{icon:'picture_as_pdf',color:'var(--pdf)'},
-  'application/vnd.openxmlformats-officedocument':{icon:'description',color:'var(--doc)'},
+  'application/vnd.google-apps.folder': {icon:'folder',color:'var(--folder)'},
+  'video/': {icon:'play_circle_filled',color:'var(--video)'},
+  'audio/': {icon:'audiotrack',color:'var(--audio)'},
+  'image/': {icon:'image',color:'var(--image)'},
   'application/vnd.google-apps.document':{icon:'description',color:'var(--doc)'},
-  'application/vnd.google-apps.spreadsheet':{icon:'table_chart',color:'var(--audio)'},
-  'application/vnd.google-apps.presentation':{icon:'slideshow',color:'var(--folder)'},
+  'application/pdf':{icon:'picture_as_pdf',color:'var(--doc)'},
   'application/zip':{icon:'folder_zip',color:'var(--folder)'},
-  'text/':       {icon:'article',color:'var(--other)'},
 };
-
 function getIcon(mime) {
   if (!mime) return {icon:'insert_drive_file',color:'var(--other)'};
   if (mime === FOLDER_MIME) return iconMap[FOLDER_MIME];
@@ -275,7 +439,7 @@ function fmtDate(iso) {
 function renderFiles(files) {
   const el = document.getElementById('list');
   if (!files.length) {
-    el.innerHTML = '<div class="state"><span class="material-icons" style="font-size:48px;color:var(--surface3)">folder_open</span><span>This folder is empty</span></div>';
+    el.innerHTML = '<div class="state"><span class="material-icons" style="font-size:48px;color:var(--surface3)">folder_open</span><span>Folder is empty</span></div>';
     return;
   }
   el.innerHTML = files.map((f,i) => {
@@ -285,9 +449,6 @@ function renderFiles(files) {
       <div class="name">
         <span class="material-icons" style="color:${ic.color}">${ic.icon}</span>
         <span title="${f.name}">${f.name}</span>
-        <div class="actions">
-          ${!isFolder?`<span class="material-icons" title="Open in Drive" onclick="openDrive(event,'${f.id}')">open_in_new</span>`:''}
-        </div>
       </div>
       <div class="size">${isFolder?'—':fmtSize(f.size)}</div>
       <div class="date">${fmtDate(f.modifiedTime)}</div>
@@ -304,21 +465,38 @@ function updateStats(files) {
 
 function renderBreadcrumb() {
   const el = document.getElementById('breadcrumb');
-  el.innerHTML = '<span class="material-icons" style="font-size:15px;color:var(--text2)">home</span>' +
-    navStack.map((n,i) => {
-      const isLast = i === navStack.length-1;
-      return (i>0?'<span class="bc-sep">/</span>':'')+
-        `<span class="bc-item${isLast?' active':''}" onclick="navTo(${i})">${n.name}</span>`;
-    }).join('');
+  let html = '<span class="bc-item" onclick="renderRootDrives()"><span class="material-icons" style="font-size:18px">home</span> Home</span>';
+  
+  navStack.forEach((n, i) => {
+    const isLast = i === navStack.length - 1;
+    html += `<span class="bc-sep">/</span><span class="bc-item${isLast?' active':''}" onclick="navTo(${i})">${n.name}</span>`;
+  });
+  el.innerHTML = html;
 }
 
-// ── FILE PANEL ────────────────────────────────────────────────────────────────
-function openPanel(f) {
-  const streamUrl = `${PROXY}/stream?id=${f.id}&name=${encodeURIComponent(f.name)}`;
-  const dlUrl     = `${PROXY}/download?id=${f.id}&name=${encodeURIComponent(f.name)}`;
-  const isVideo   = f.mimeType && f.mimeType.startsWith('video/');
-  const isAudio   = f.mimeType && f.mimeType.startsWith('audio/');
-  const isMedia   = isVideo || isAudio;
+// ── FILE PANEL ───────────────────────────────────────────────────────
+function onItem(i) {
+  const f = allFiles[i];
+  if (f.mimeType === FOLDER_MIME) {
+    navStack.push({id: f.id, name: f.name});
+    renderBreadcrumb();
+    listFolder(f.id);
+  } else {
+    openPanel(f, i);
+  }
+}
+
+function navTo(i) {
+  if (i === navStack.length-1) return;
+  navStack = navStack.slice(0, i+1);
+  renderBreadcrumb();
+  listFolder(navStack[navStack.length-1].id);
+}
+
+function openPanel(f, index) {
+  const streamUrl = `${PROXY}/stream?drive_id=${currentDriveId}&id=${f.id}&name=${encodeURIComponent(f.name)}`;
+  const dlUrl     = `${PROXY}/download?drive_id=${currentDriveId}&id=${f.id}&name=${encodeURIComponent(f.name)}`;
+  const isMedia   = f.mimeType && (f.mimeType.startsWith('video/') || f.mimeType.startsWith('audio/'));
 
   document.getElementById('panelTitle').textContent = f.name;
   document.getElementById('panelBody').innerHTML = `
@@ -329,10 +507,9 @@ function openPanel(f) {
     </div>
     <div class="action-btns">
       ${isMedia
-        ? `<button class="action-btn stream-btn" onclick="window.open('${streamUrl}','_blank')"><span class="material-icons">play_circle</span>Stream / Play</button>`
+        ? `<button class="action-btn stream-btn" onclick="playMedia('${streamUrl}', '${f.name.replace(/'/g,"\\'")}', '${f.mimeType}', ${index})"><span class="material-icons">play_circle</span>Stream / Play</button>`
         : `<button class="action-btn stream-btn" onclick="window.open('${streamUrl}','_blank')"><span class="material-icons">open_in_new</span>Open / Stream</button>`}
-      <a href="${dlUrl}" download="${f.name}" class="action-btn dl-btn" style="text-decoration:none"><span class="material-icons">download</span>Download</a>
-      <button class="action-btn drive-btn" onclick="window.open('https://drive.google.com/file/d/${f.id}/view','_blank')"><span class="material-icons">open_in_new</span>Google Drive</button>
+      <a href="${dlUrl}" download="${f.name}" class="action-btn dl-btn"><span class="material-icons">download</span>Download</a>
     </div>
     <div class="link-block">
       <div class="link-block-head stream"><span class="material-icons">stream</span>Streamable / Direct Link</div>
@@ -348,7 +525,6 @@ function openPanel(f) {
         <button class="copy-btn" onclick="copyLink('dlUrlBox',this)"><span class="material-icons">content_copy</span>Copy</button>
       </div>
     </div>
-    <div class="warn-note"><strong>✅ Proxy links:</strong> These work through your local server.py — no token expiry issues. Links are valid as long as server.py is running.</div>
   `;
   document.getElementById('panelOverlay').classList.add('open');
   document.getElementById('filePanel').classList.add('open');
@@ -359,69 +535,307 @@ function closePanel() {
   document.getElementById('filePanel').classList.remove('open');
 }
 
-function copyLink(elId, btn) {
-  const text = document.getElementById(elId).textContent;
-  navigator.clipboard.writeText(text).then(() => {
-    btn.classList.add('copied');
-    btn.innerHTML = '<span class="material-icons">check</span>Copied!';
-    setTimeout(() => {
-      btn.classList.remove('copied');
-      btn.innerHTML = '<span class="material-icons">content_copy</span>Copy';
-    }, 2000);
-  });
+// ── CUSTOM PLAYER ────────────────────────────────────────────────────
+let currentMediaIndex = -1;
+let idleTimeout;
+
+function playMedia(url, name, mimeType, index) {
+  currentMediaIndex = index !== undefined ? index : -1;
+  closePanel();
+  document.getElementById('playerTitle').textContent = name;
+  const container = document.getElementById('playerContainer');
+  const overlayCtrl = document.getElementById('overlayControls');
+  
+  if (mimeType && mimeType.startsWith('video/')) {
+    container.innerHTML = `
+      <video id="html5player" autoplay style="width:100%; max-height:75vh; outline:none; background:#000; cursor:pointer;" onclick="handleVideoClick()" ondblclick="handleVideoDblClick()">
+        <source src="${url}" type="${mimeType}">
+        Your browser does not support HTML5 video.
+      </video>`;
+    overlayCtrl.style.display = 'flex';
+    setupPlayerEvents();
+  } else {
+    container.innerHTML = `
+      <div style="padding:40px; width:100%; text-align:center;">
+        <audio id="html5player" autoplay style="width:80%; outline:none;">
+          <source src="${url}" type="${mimeType}">
+          Your browser does not support HTML5 audio.
+        </audio>
+      </div>`;
+    overlayCtrl.style.display = 'flex';
+    setupPlayerEvents();
+  }
+  document.getElementById('playerModal').classList.add('open');
+  resetIdleTimer();
 }
 
-// ── ACTIONS ───────────────────────────────────────────────────────────────────
-function onItem(i) {
-  const f = allFiles[i];
-  if (f.mimeType === FOLDER_MIME) {
-    navStack.push({id:f.id, name:f.name});
-    renderBreadcrumb();
-    listFolder(f.id);
+function setupPlayerEvents() {
+  const player = document.getElementById('html5player');
+  if(!player) return;
+
+  const progBar = document.getElementById('progressBar');
+  const tCur = document.getElementById('timeCurrent');
+  const tDur = document.getElementById('timeDuration');
+  const playIcon = document.getElementById('playBtnIcon');
+
+  player.addEventListener('loadedmetadata', () => {
+    tDur.textContent = formatTime(player.duration);
+    progBar.max = player.duration;
+  });
+
+  player.addEventListener('timeupdate', () => {
+    tCur.textContent = formatTime(player.currentTime);
+    progBar.value = player.currentTime;
+    // Update played bar visually
+    const p = (player.currentTime / player.duration) * 100;
+    progBar.style.setProperty('--prog', (p || 0) + '%');
+  });
+
+  player.addEventListener('progress', () => {
+    if (player.buffered.length > 0 && player.duration > 0) {
+      // Get the furthest buffered point
+      const bufEnd = player.buffered.end(player.buffered.length - 1);
+      const b = (bufEnd / player.duration) * 100;
+      progBar.style.setProperty('--buf', (b || 0) + '%');
+    }
+  });
+
+  player.addEventListener('play', () => playIcon.textContent = 'pause');
+  player.addEventListener('pause', () => playIcon.textContent = 'play_arrow');
+  player.addEventListener('ended', () => playSibling(1)); // Auto-play next!
+}
+
+function formatTime(sec) {
+  if (isNaN(sec)) return "0:00";
+  const h = Math.floor(sec / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  const s = Math.floor(sec % 60);
+  if (h > 0) return `${h}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+  return `${m}:${s.toString().padStart(2,'0')}`;
+}
+
+function seekVideo(val) {
+  const player = document.getElementById('html5player');
+  if (player) player.currentTime = val;
+}
+
+let clickTimer = null;
+function handleVideoClick() {
+  if (isLocked) return;
+  if (clickTimer) clearTimeout(clickTimer);
+  clickTimer = setTimeout(() => {
+    clickTimer = null;
+    togglePlay();
+  }, 250);
+}
+
+function handleVideoDblClick() {
+  if (isLocked) return;
+  if (clickTimer) {
+    clearTimeout(clickTimer);
+    clickTimer = null;
+  }
+  toggleFullscreen();
+}
+
+function togglePlay() {
+  const player = document.getElementById('html5player');
+  if (!player) return;
+  if (player.paused) player.play();
+  else player.pause();
+}
+
+function toggleMute() {
+  const player = document.getElementById('html5player');
+  if (!player) return;
+  player.muted = !player.muted;
+  document.getElementById('muteBtnIcon').textContent = player.muted ? 'volume_off' : 'volume_up';
+}
+
+// ── NEW FEATURES: LOCK & ASPECT RATIO ──────────────────────────────
+let isLocked = false;
+function toggleLock() {
+  isLocked = !isLocked;
+  const wrapper = document.getElementById('videoWrapper');
+  if (isLocked) {
+    wrapper.classList.add('locked');
   } else {
-    openPanel(f);
+    wrapper.classList.remove('locked');
+    resetIdleTimer();
   }
 }
 
-function openDrive(e, id) {
-  e.stopPropagation();
-  window.open('https://drive.google.com/file/d/'+id+'/view','_blank');
+let aspectModes = ['vid-fit-contain', 'vid-fit-cover', 'vid-fit-fill'];
+let currentAspectMode = 0;
+function cycleAspect() {
+  const player = document.getElementById('html5player');
+  if (!player) return;
+  
+  // Remove old class
+  player.classList.remove(aspectModes[currentAspectMode]);
+  
+  // Cycle to next mode
+  currentAspectMode = (currentAspectMode + 1) % aspectModes.length;
+  
+  // Add new class
+  player.classList.add(aspectModes[currentAspectMode]);
+  
+  // Show tooltip feedback (optional visual change)
+  const icon = document.getElementById('aspectIcon');
+  if(currentAspectMode === 0) { icon.textContent = 'aspect_ratio'; icon.parentElement.title = 'Default (Contain)'; }
+  else if(currentAspectMode === 1) { icon.textContent = 'crop_free'; icon.parentElement.title = 'Crop (Cover)'; }
+  else { icon.textContent = 'settings_overscan'; icon.parentElement.title = 'Stretch (Fill)'; }
 }
 
-function navTo(i) {
-  if (i === navStack.length-1) return;
-  navStack = navStack.slice(0,i+1);
-  renderBreadcrumb();
-  listFolder(navStack[navStack.length-1].id);
+function resetIdleTimer() {
+  const wrapper = document.getElementById('videoWrapper');
+  if(!wrapper) return;
+  wrapper.classList.remove('idle');
+  clearTimeout(idleTimeout);
+  idleTimeout = setTimeout(() => {
+    const player = document.getElementById('html5player');
+    // If locked, hide controls even if paused. If not locked, hide only if playing.
+    if (isLocked || (player && !player.paused)) {
+      wrapper.classList.add('idle');
+    }
+  }, 2500);
 }
 
-function switchDrive(n) {
-  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',i===n));
-  navStack=[];
-  listRoot();
+function skipMedia(seconds) {
+  const player = document.getElementById('html5player');
+  if (player) player.currentTime += seconds;
+  resetIdleTimer();
+}
+
+function toggleFullscreen() {
+  const wrapper = document.getElementById('videoWrapper');
+  if (!document.fullscreenElement) {
+    if (wrapper.requestFullscreen) wrapper.requestFullscreen();
+    else if (wrapper.webkitRequestFullscreen) wrapper.webkitRequestFullscreen();
+    else if (wrapper.msRequestFullscreen) wrapper.msRequestFullscreen();
+  } else {
+    if (document.exitFullscreen) document.exitFullscreen();
+    else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+    else if (document.msExitFullscreen) document.msExitFullscreen();
+  }
+}
+
+function playSibling(offset) {
+  if (currentMediaIndex === -1 || !allFiles) return;
+  let newIdx = currentMediaIndex + offset;
+  while (newIdx >= 0 && newIdx < allFiles.length) {
+    const f = allFiles[newIdx];
+    const isMedia = f.mimeType && (f.mimeType.startsWith('video/') || f.mimeType.startsWith('audio/'));
+    if (isMedia) {
+      const streamUrl = `${PROXY}/stream?drive_id=${currentDriveId}&id=${f.id}&name=${encodeURIComponent(f.name)}`;
+      playMedia(streamUrl, f.name, f.mimeType, newIdx);
+      return;
+    }
+    newIdx += offset;
+  }
+}
+
+function closePlayer() {
+  if (document.fullscreenElement) {
+    document.exitFullscreen().catch(()=>{});
+  }
+  document.getElementById('playerModal').classList.remove('open');
+  document.getElementById('playerContainer').innerHTML = ''; 
+  currentMediaIndex = -1;
+  clearTimeout(idleTimeout);
+}
+
+function copyLink(elId, btn) {
+  navigator.clipboard.writeText(document.getElementById(elId).textContent);
+  btn.classList.add('copied'); btn.innerHTML = '<span class="material-icons">check</span>Copied!';
+  setTimeout(() => { btn.classList.remove('copied'); btn.innerHTML = '<span class="material-icons">content_copy</span>Copy'; }, 2000);
+}
+
+// ── SETTINGS UI ──────────────────────────────────────────────────────
+function openSettings() {
+  document.getElementById('settingsModal').classList.add('open');
+  renderSettingsDrives();
+}
+function closeSettings() {
+  document.getElementById('settingsModal').classList.remove('open');
+  document.getElementById('addDriveForm').classList.remove('open');
+}
+function toggleAddForm() {
+  document.getElementById('addDriveForm').classList.toggle('open');
+}
+
+function renderSettingsDrives() {
+  const el = document.getElementById('driveListUI');
+  if(!drives.length) {
+    el.innerHTML = '<div style="color:var(--text2); padding:10px 0;">No drives configured yet.</div>';
+    return;
+  }
+  el.innerHTML = drives.map(d => `
+    <div class="drive-item">
+      <div class="d-info">
+        <span class="material-icons" style="color:var(--primary)">cloud</span>
+        <strong>${d.name}</strong>
+        ${d.id === 'env-drive' ? '<span class="badge">ENV Default</span>' : ''}
+      </div>
+      <div class="d-actions">
+        ${d.id !== 'env-drive' ? `<button class="btn-icon" onclick="deleteDrive('${d.id}')" title="Delete Drive"><span class="material-icons">delete</span></button>` : ''}
+      </div>
+    </div>
+  `).join('');
 }
 
 function onSearch(q) {
+  if(!currentDriveId) return; // disable search in root
   if (!q.trim()) { renderFiles(allFiles); updateStats(allFiles); return; }
   const r = allFiles.filter(f=>f.name.toLowerCase().includes(q.toLowerCase()));
   renderFiles(r); updateStats(r);
 }
 
-// ── UI HELPERS ────────────────────────────────────────────────────────────────
-function showLoading(msg='Loading…') {
-  document.getElementById('list').innerHTML =
-    `<div class="state"><div class="spinner"></div><span>${msg}</span></div>`;
+function showLoading(msg) {
+  document.getElementById('list').innerHTML = `<div class="state"><div class="spinner"></div><span>${msg}</span></div>`;
   document.getElementById('stats').innerHTML = '<span>Loading…</span>';
 }
-
 function showError(msg) {
-  document.getElementById('list').innerHTML =
-    `<div class="state"><span class="material-icons" style="font-size:40px;color:#ef5350">error_outline</span><div class="error-box">${msg}</div></div>`;
-  document.getElementById('stats').innerHTML = '<span style="color:#ef9a9a">Error loading data</span>';
+  document.getElementById('list').innerHTML = `<div class="state"><span class="material-icons" style="font-size:40px;color:#ef5350">error_outline</span><div style="color:#ef9a9a">${msg}</div></div>`;
+  document.getElementById('stats').innerHTML = '<span>Error</span>';
 }
 
-// ── INIT ──────────────────────────────────────────────────────────────────────
-listRoot();
+// ── REAL-TIME TRAFFIC MONITOR ────────────────────────────────────────
+setInterval(async () => {
+  const start = performance.now();
+  let ms = 0;
+  let isError = false;
+  
+  if (currentDriveId) {
+    try {
+      const r = await fetch(`${PROXY}/ping/${currentDriveId}`);
+      if(r.ok) {
+        const d = await r.json();
+        ms = d.ms || Math.round(performance.now() - start);
+        if (d.status === 'error') isError = true;
+      } else isError = true;
+    } catch(e) { isError = true; }
+  } else {
+    try {
+      await fetch(`${PROXY}/drives`);
+      ms = Math.round(performance.now() - start);
+    } catch(e) { isError = true; }
+  }
+
+  const el = document.getElementById('pingText');
+  const parent = document.getElementById('trafficMonitor');
+  if (isError) {
+    el.textContent = 'Offline';
+    parent.style.color = '#ef5350';
+  } else {
+    el.textContent = ms + ' ms';
+    if (ms < 300) parent.style.color = '#4caf50';      // Green (Good)
+    else if (ms < 800) parent.style.color = '#ffb300'; // Yellow (Medium)
+    else parent.style.color = '#ef5350';               // Red (Slow)
+  }
+}, 2500);
+
+init();
 </script>
 </body>
 </html>
