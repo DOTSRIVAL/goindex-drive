@@ -286,6 +286,8 @@ async function fetchDrives() {
   } catch(e) { console.error("Failed to load drives", e); }
 }
 
+let editingDriveId = null;
+
 async function saveNewDrive() {
   const btn = event.target;
   btn.textContent = 'Saving...';
@@ -296,28 +298,55 @@ async function saveNewDrive() {
       client_secret: document.getElementById('inClientSecret').value,
       refresh_token: document.getElementById('inRefreshToken').value
     };
-    const r = await fetch(`${PROXY}/drives`, {
-      method: 'POST',
+    
+    const url = editingDriveId ? `${PROXY}/drives/${editingDriveId}` : `${PROXY}/drives`;
+    const method = editingDriveId ? 'PUT' : 'POST';
+
+    const r = await fetch(url, {
+      method: method,
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify(body)
     });
     const d = await r.json();
     if(d.error) throw new Error(d.error);
     
-    alert('Drive Added!');
-    document.getElementById('inName').value = '';
-    document.getElementById('inClientId').value = '';
-    document.getElementById('inClientSecret').value = '';
-    document.getElementById('inRefreshToken').value = '';
-    toggleAddForm();
+    alert(editingDriveId ? 'Drive Updated!' : 'Drive Added!');
+    
+    document.getElementById('addDriveForm').classList.remove('open');
+    resetAddForm();
     await fetchDrives();
     renderSettingsDrives();
-    if(!currentDriveId) renderRootDrives();
+    if(!currentDriveId || currentDriveId === editingDriveId) renderRootDrives();
   } catch(e) {
     alert('Error: ' + e.message);
   } finally {
-    btn.textContent = 'Save Drive';
+    btn.textContent = editingDriveId ? 'Update Drive' : 'Save Drive';
   }
+}
+
+function resetAddForm() {
+  editingDriveId = null;
+  document.getElementById('inName').value = '';
+  document.getElementById('inClientId').value = '';
+  document.getElementById('inClientId').placeholder = '';
+  document.getElementById('inClientSecret').value = '';
+  document.getElementById('inClientSecret').placeholder = '';
+  document.getElementById('inRefreshToken').value = '';
+  document.getElementById('inRefreshToken').placeholder = '';
+  document.getElementById('saveDriveBtn').textContent = 'Save Drive';
+}
+
+function openEditForm(id, name) {
+  editingDriveId = id;
+  document.getElementById('addDriveForm').classList.add('open');
+  document.getElementById('inName').value = name;
+  document.getElementById('inClientId').value = '';
+  document.getElementById('inClientId').placeholder = '(Leave blank to keep current)';
+  document.getElementById('inClientSecret').value = '';
+  document.getElementById('inClientSecret').placeholder = '(Leave blank to keep current)';
+  document.getElementById('inRefreshToken').value = '';
+  document.getElementById('inRefreshToken').placeholder = '(Leave blank to keep current)';
+  document.getElementById('saveDriveBtn').textContent = 'Update Drive';
 }
 
 async function deleteDrive(id) {
@@ -759,9 +788,13 @@ function openSettings() {
 function closeSettings() {
   document.getElementById('settingsModal').classList.remove('open');
   document.getElementById('addDriveForm').classList.remove('open');
+  resetAddForm();
 }
 function toggleAddForm() {
   document.getElementById('addDriveForm').classList.toggle('open');
+  if (!document.getElementById('addDriveForm').classList.contains('open')) {
+    resetAddForm();
+  }
 }
 
 function renderSettingsDrives() {
@@ -778,7 +811,10 @@ function renderSettingsDrives() {
         ${d.id === 'env-drive' ? '<span class="badge">ENV Default</span>' : ''}
       </div>
       <div class="d-actions">
-        ${d.id !== 'env-drive' ? `<button class="btn-icon" onclick="deleteDrive('${d.id}')" title="Delete Drive"><span class="material-icons">delete</span></button>` : ''}
+        ${d.id !== 'env-drive' ? `
+          <button class="btn-icon" onclick="openEditForm('${d.id}', '${d.name.replace(/'/g, "\\'")}')" title="Edit Drive"><span class="material-icons" style="color:var(--primary)">edit</span></button>
+          <button class="btn-icon" onclick="deleteDrive('${d.id}')" title="Delete Drive"><span class="material-icons" style="color:#ef5350">delete</span></button>
+        ` : ''}
       </div>
     </div>
   `).join('');
