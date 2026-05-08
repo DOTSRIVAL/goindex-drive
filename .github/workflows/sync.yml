@@ -14,5 +14,5 @@ jobs:
           lfs: true
       - name: Push to hub
         env:
-          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          HF_TOKEN: ${{ secrets.HF_SPACE_DOTSRIVAL_TOKEN }}
         run: git push --force https://DOTSRIVAL:$HF_TOKEN@huggingface.co/spaces/DOTSRIVAL/reclone main
