@@ -336,16 +336,17 @@ function resetAddForm() {
   document.getElementById('saveDriveBtn').textContent = 'Save Drive';
 }
 
-function openEditForm(id, name) {
+function openEditForm(id) {
   editingDriveId = id;
+  const drive = drives.find(d => d.id === id);
+  if (!drive) return;
+  
   document.getElementById('addDriveForm').classList.add('open');
-  document.getElementById('inName').value = name;
-  document.getElementById('inClientId').value = '';
-  document.getElementById('inClientId').placeholder = '(Leave blank to keep current)';
-  document.getElementById('inClientSecret').value = '';
-  document.getElementById('inClientSecret').placeholder = '(Leave blank to keep current)';
-  document.getElementById('inRefreshToken').value = '';
-  document.getElementById('inRefreshToken').placeholder = '(Leave blank to keep current)';
+  document.getElementById('inName').value = drive.name || '';
+  document.getElementById('inClientId').value = drive.client_id || '';
+  document.getElementById('inClientSecret').value = drive.client_secret || '';
+  document.getElementById('inRefreshToken').value = drive.refresh_token || '';
+  
   document.getElementById('saveDriveBtn').textContent = 'Update Drive';
 }
 
@@ -812,7 +813,7 @@ function renderSettingsDrives() {
       </div>
       <div class="d-actions">
         ${d.id !== 'env-drive' ? `
-          <button class="btn-icon" onclick="openEditForm('${d.id}', '${d.name.replace(/'/g, "\\'")}')" title="Edit Drive"><span class="material-icons" style="color:var(--primary)">edit</span></button>
+          <button class="btn-icon" onclick="openEditForm('${d.id}')" title="Edit Drive"><span class="material-icons" style="color:var(--primary)">edit</span></button>
           <button class="btn-icon" onclick="deleteDrive('${d.id}')" title="Delete Drive"><span class="material-icons" style="color:#ef5350">delete</span></button>
         ` : ''}
       </div>
