@@ -12,16 +12,13 @@ jobs:
         with:
           fetch-depth: 1
           
-      - name: Push ONLY Required Files to Hub
+      - name: Push to HF securely
         env:
           HF_TOKEN: ${{ secrets.HF_SPACE_DOTSRIVAL_TOKEN }}
         run: |
           mkdir /tmp/deploy
           cp app.py preview.html Dockerfile requirements.txt /tmp/deploy/
-          cd /tmp/deploy
-          
-          # Hugging Face ku thevayana README config file ah create pandrom
-          cat << 'EOF' > README.md
+          cat << 'EOF' > /tmp/deploy/README.md
           ---
           title: DriveBase
           emoji: 🚀
@@ -33,9 +30,12 @@ jobs:
           ---
           EOF
           
-          git init
+          git clone https://DOTSRIVAL:$HF_TOKEN@huggingface.co/spaces/DOTSRIVAL/reclone /tmp/hf_repo
+          cd /tmp/hf_repo
+          cp /tmp/deploy/* .
+          
           git config user.name "GitHub Action"
           git config user.email "action@github.com"
           git add .
-          git commit -m "Deploy to Hugging Face"
-          git push --force https://DOTSRIVAL:$HF_TOKEN@huggingface.co/spaces/DOTSRIVAL/reclone master:main
+          git commit -m "Update from GitHub" || echo "No changes to commit"
+          git push https://DOTSRIVAL:$HF_TOKEN@huggingface.co/spaces/DOTSRIVAL/reclone main
