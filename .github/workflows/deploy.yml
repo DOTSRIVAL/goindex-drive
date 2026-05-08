@@ -1,0 +1,24 @@
+name: Sync to Hugging Face Spaces
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:   # allow manual trigger
+
+jobs:
+  sync-to-hf:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout GitHub repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          lfs: true
+
+      - name: Push to Hugging Face Space
+        uses: huggingface/huggingface_hub-js/packages/github-action@main
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        with:
+          args: upload-large-folder . --repo-id=${{ secrets.HF_SPACE_ID }} --repo-type=space
