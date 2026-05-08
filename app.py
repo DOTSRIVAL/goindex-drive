@@ -76,8 +76,7 @@ class DriveIn(BaseModel):
 
 @app.get("/drives")
 async def list_drives():
-    safe = [{"id": d["id"], "name": d["name"]} for d in _drives]
-    return JSONResponse(safe, headers=CORS)
+    return JSONResponse(_drives, headers=CORS)
 
 @app.post("/drives")
 async def add_drive(body: DriveIn):
