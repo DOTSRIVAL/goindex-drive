@@ -527,6 +527,9 @@ function openPanel(f, index) {
   const streamUrl = `${PROXY}/stream?drive_id=${currentDriveId}&id=${f.id}&name=${encodeURIComponent(f.name)}`;
   const dlUrl     = `${PROXY}/download?drive_id=${currentDriveId}&id=${f.id}&name=${encodeURIComponent(f.name)}`;
   const isMedia   = f.mimeType && (f.mimeType.startsWith('video/') || f.mimeType.startsWith('audio/'));
+  
+  const absoluteStreamUrl = window.location.origin + streamUrl;
+  const absoluteDlUrl     = window.location.origin + dlUrl;
 
   document.getElementById('panelTitle').textContent = f.name;
   document.getElementById('panelBody').innerHTML = `
@@ -544,14 +547,14 @@ function openPanel(f, index) {
     <div class="link-block">
       <div class="link-block-head stream"><span class="material-icons">stream</span>Streamable / Direct Link</div>
       <div class="link-box">
-        <div class="link-url" id="streamUrlBox">${streamUrl}</div>
+        <div class="link-url" id="streamUrlBox">${absoluteStreamUrl}</div>
         <button class="copy-btn" onclick="copyLink('streamUrlBox',this)"><span class="material-icons">content_copy</span>Copy</button>
       </div>
     </div>
     <div class="link-block">
       <div class="link-block-head download"><span class="material-icons">download</span>Direct Download Link</div>
       <div class="link-box">
-        <div class="link-url" id="dlUrlBox">${dlUrl}</div>
+        <div class="link-url" id="dlUrlBox">${absoluteDlUrl}</div>
         <button class="copy-btn" onclick="copyLink('dlUrlBox',this)"><span class="material-icons">content_copy</span>Copy</button>
       </div>
     </div>
