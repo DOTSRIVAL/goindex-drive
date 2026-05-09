@@ -268,6 +268,24 @@ input[type=range]:hover::-webkit-slider-thumb { transform: scale(1.2); }
         </div>
       </div>
       
+      <hr style="border: 0; border-top: 1px solid var(--divider); margin: 15px 0;">
+      
+      <div style="display:flex; flex-direction:column; gap:12px;">
+        <h3>📊 Analytics & Traffic Monitor</h3>
+        <p style="font-size:0.8rem; color:var(--text2);">Monitor how much data and users are flowing through your Drive Base today.</p>
+        
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+          <div style="background:var(--surface); padding:12px; border-radius:8px; border:1px solid var(--divider); text-align:center;">
+            <div style="font-size:0.8rem; color:var(--text2);">Today's Data Transfer</div>
+            <div id="analyticsBytes" style="font-size:1.5rem; font-weight:bold; color:var(--primary);">0 MB</div>
+          </div>
+          <div style="background:var(--surface); padding:12px; border-radius:8px; border:1px solid var(--divider); text-align:center;">
+            <div style="font-size:0.8rem; color:var(--text2);">Unique Active Users</div>
+            <div id="analyticsUsers" style="font-size:1.5rem; font-weight:bold; color:#4caf50;">0</div>
+          </div>
+        </div>
+      </div>
+      
     </div>
   </div>
 </div>
@@ -347,6 +365,21 @@ async function fetchGlobalSettings() {
       document.getElementById('inDirectMode').checked = s.direct_download_mode || false;
     }
   } catch(e) { console.error("Could not fetch settings", e); }
+}
+
+async function fetchAnalytics() {
+  try {
+    const r = await fetch(`${PROXY}/analytics`);
+    if(r.ok) {
+      const data = await r.json();
+      const bytes = data.total_bytes || 0;
+      const gb = (bytes / (1024*1024*1024)).toFixed(2);
+      const mb = (bytes / (1024*1024)).toFixed(2);
+      
+      document.getElementById('analyticsBytes').textContent = bytes > 1024*1024*1024 ? `${gb} GB` : `${mb} MB`;
+      document.getElementById('analyticsUsers').textContent = data.unique_users || 0;
+    }
+  } catch(e) { console.error("Could not fetch analytics", e); }
 }
 
 async function saveGlobalSettings() {
