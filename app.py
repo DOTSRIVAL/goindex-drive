@@ -172,8 +172,34 @@ async def get_token(drive_id: str) -> str:
 
 CORS = {"Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "*"}
 
-# ── GLOBAL SETTINGS ───────────────────────────────────────────────────────────
+# ── GLOBAL SETTINGS & ANALYTICS ───────────────────────────────────────────────
 _app_settings = {"chunk_size_mb": 2, "speed_limit_mb": 0, "direct_download_mode": False}
+
+# Format: {"YYYY-MM-DD": {"bytes": 0, "hits": 0, "ips": set()}}
+_analytics = {}
+
+def log_analytics(bytes_sent: int, ip: str):
+    import datetime
+    today = str(datetime.date.today())
+    if today not in _analytics:
+        _analytics[today] = {"bytes": 0, "hits": 0, "ips": set()}
+    _analytics[today]["bytes"] += bytes_sent
+    _analytics[today]["hits"] += 1
+    if ip:
+        _analytics[today]["ips"].add(ip)
+
+@app.get("/analytics")
+async def get_analytics():
+    import datetime
+    today = str(datetime.date.today())
+    data = _analytics.get(today, {"bytes": 0, "hits": 0, "ips": set()})
+    
+    return JSONResponse({
+        "date": today,
+        "total_bytes": data["bytes"],
+        "total_hits": data["hits"],
+        "unique_users": len(data["ips"])
+    }, headers=CORS)
 
 @app.get("/settings")
 async def get_settings():
@@ -320,8 +346,9 @@ async def stream_file(request: Request, drive_id: str, id: str, name: str = "fil
                 
                 async for chunk in r.content.iter_chunked(chunk_bytes):
                     yield chunk
+                    chunk_len = len(chunk)
+                    bytes_sent += chunk_len
                     if speed_limit > 0:
-                        bytes_sent += len(chunk)
                         expected_time = bytes_sent / speed_limit
                         elapsed_time = time.time() - start_time
                         if elapsed_time < expected_time:
@@ -329,6 +356,12 @@ async def stream_file(request: Request, drive_id: str, id: str, name: str = "fil
             finally:
                 r.close()
                 await session.close()
+                
+                # Log to analytics
+                client_ip = request.headers.get("x-forwarded-for", request.client.host if request.client else "unknown")
+                if "," in client_ip:
+                    client_ip = client_ip.split(",")[0].strip()
+                log_analytics(bytes_sent, client_ip)
 
         resp_h = {**CORS, "Accept-Ranges": "bytes"}
         ct = r.headers.get("content-type", "application/octet-stream")
