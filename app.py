@@ -33,13 +33,28 @@ def load_drives():
                 "client_secret": cs,
                 "refresh_token": rt,
             })
+            
+    for i in range(1, 20):
+        prefix = f"DRIVE{i}_"
+        did = f"env-drive-{i}"
+        dname = os.environ.get(prefix + "NAME")
+        dcid = os.environ.get(prefix + "CLIENT_ID")
+        dcs = os.environ.get(prefix + "CLIENT_SECRET")
+        drt = os.environ.get(prefix + "REFRESH_TOKEN")
+        if dcid and dcs and drt:
+            if not any(d["client_id"] == dcid for d in _drives):
+                _drives.append({
+                    "id": did,
+                    "name": dname or f"ENV Drive {i}",
+                    "client_id": dcid,
+                    "client_secret": dcs,
+                    "refresh_token": drt,
+                })
 
 def save_drives():
-    # Don't save the env drive
-    to_save = [d for d in _drives if d["id"] != "env-drive"]
+    # Don't save the env drives
+    to_save = [d for d in _drives if not d["id"].startswith("env-drive")]
     DRIVES_FILE.write_text(json.dumps(to_save, indent=2))
-    
-    # Auto-sync to Hugging Face Space if running on HF
     hf_token = os.environ.get("HF_TOKEN")
     space_id = os.environ.get("SPACE_ID")
     if hf_token and space_id:
