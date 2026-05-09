@@ -154,6 +154,17 @@ input[type=range] { -webkit-appearance: none; width: 100%; background: transpare
 input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 6px; border-radius: 4px; border: none; background: linear-gradient(to right, var(--primary) var(--prog), rgba(255,255,255,0.4) var(--prog), rgba(255,255,255,0.4) var(--buf), rgba(255,255,255,0.15) var(--buf)); }
 input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 14px; width: 14px; border-radius: 50%; background: var(--primary); margin-top: -4px; box-shadow: 0 0 4px rgba(0,0,0,0.5); transition: 0.1s; }
 input[type=range]:hover::-webkit-slider-thumb { transform: scale(1.2); }
+input[type=range]:hover::-webkit-slider-thumb { transform: scale(1.2); }
+
+/* SETTINGS TABS */
+.settings-tabs { display: flex; border-bottom: 1px solid var(--divider); margin-bottom: 16px; overflow-x: auto; scrollbar-width: none; }
+.settings-tabs::-webkit-scrollbar { display: none; }
+.settings-tab { padding: 10px 16px; cursor: pointer; color: var(--text2); border-bottom: 2px solid transparent; font-weight: 500; white-space: nowrap; }
+.settings-tab:hover { color: var(--text); }
+.settings-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+.settings-pane { display: none; }
+.settings-pane.active { display: block; animation: fadeIn 0.2s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 </style>
 </head>
 <body>
@@ -213,80 +224,101 @@ input[type=range]:hover::-webkit-slider-thumb { transform: scale(1.2); }
       <span class="material-icons" style="cursor:pointer" onclick="closeSettings()">close</span>
     </div>
     <div class="modal-body">
-      <div style="display:flex; justify-content:space-between; align-items:center;">
-        <h3>Connected Drives</h3>
-        <button class="btn btn-primary" onclick="toggleAddForm()"><span class="material-icons">add</span> Add Drive</button>
+      <div class="settings-tabs">
+        <div class="settings-tab active" onclick="switchTab('tab-drives', this)">☁ Drives</div>
+        <div class="settings-tab" onclick="switchTab('tab-speed', this)">⚡ Speed</div>
+        <div class="settings-tab" onclick="switchTab('tab-analytics', this)">📊 Analytics</div>
+        <div class="settings-tab" onclick="switchTab('tab-security', this)">🔒 Link Security</div>
       </div>
       
-      <div class="drive-list" id="driveListUI"></div>
-      
-      <div class="add-drive-form" id="addDriveForm">
-        <h4>Add New Google Drive</h4>
-        <div class="form-group">
-          <label>Drive Name (e.g. Personal, Movies)</label>
-          <input type="text" id="inName" placeholder="My Drive">
+      <!-- TAB: DRIVES -->
+      <div id="tab-drives" class="settings-pane active">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <h3>Connected Drives</h3>
+          <button class="btn btn-primary" onclick="toggleAddForm()"><span class="material-icons">add</span> Add Drive</button>
         </div>
-        <div class="form-group">
-          <label>Client ID</label>
-          <input type="text" id="inClientId" placeholder="xxx.apps.googleusercontent.com">
-        </div>
-        <div class="form-group">
-          <label>Client Secret</label>
-          <input type="text" id="inClientSecret" placeholder="GOCSPX-...">
-        </div>
-        <div class="form-group">
-          <label>Refresh Token</label>
-          <input type="text" id="inRefreshToken" placeholder="1//0g...">
-        </div>
-        <div style="display:flex; gap:10px; margin-top:8px;">
-          <button id="saveDriveBtn" class="btn btn-primary" onclick="saveNewDrive()">Save Drive</button>
-          <button class="btn" style="background:var(--surface3)" onclick="toggleAddForm()">Cancel</button>
-        </div>
-      </div>
-      
-      <hr style="border: 0; border-top: 1px solid var(--divider); margin: 10px 0;">
-      
-      <div style="display:flex; flex-direction:column; gap:12px;">
-        <h3>Speed & Performance Controls</h3>
-        <p style="font-size:0.8rem; color:var(--text2);">Control the download and streaming proxy speeds globally.</p>
-        
-        <div class="form-group">
-          <label>Proxy Chunk Size (MB)</label>
-          <input type="number" id="inChunkSize" placeholder="2" value="2" min="1" max="100">
-          <span style="font-size:0.7rem; color:var(--text2);">Larger chunks increase max speed but use more RAM. (Default: 2MB)</span>
-        </div>
-        
-        <div class="form-group">
-          <label>Speed Limit (MB/s) - Traffic Control</label>
-          <input type="number" id="inSpeedLimit" placeholder="0" value="0" min="0" step="0.1">
-          <span style="font-size:0.7rem; color:var(--text2);">Set to 0 for Unlimited Speed.</span>
-        </div>
-        
-        <div class="form-group" style="flex-direction:row; align-items:center; gap:8px;">
-          <input type="checkbox" id="inDirectMode" style="width:18px; height:18px; accent-color:var(--primary);">
-          <label for="inDirectMode" style="font-weight:bold;">Enable Direct Download (Max Speed)</label>
-        </div>
-        <p style="font-size:0.7rem; color:#ffb74d; margin-top:-6px;">Warning: Direct mode connects directly to Google Drive (like AList). This gives Maximum ISP Speed, but briefly exposes your temporary access token in the URL.</p>
-        
-        <div>
-          <button class="btn btn-primary" onclick="saveGlobalSettings()">Apply Speed Settings</button>
-        </div>
-      </div>
-      
-      <hr style="border: 0; border-top: 1px solid var(--divider); margin: 15px 0;">
-      
-      <div style="display:flex; flex-direction:column; gap:12px;">
-        <h3>📊 Analytics & Traffic Monitor</h3>
-        <p style="font-size:0.8rem; color:var(--text2);">Monitor how much data and users are flowing through your Drive Base today.</p>
-        
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-          <div style="background:var(--surface); padding:12px; border-radius:8px; border:1px solid var(--divider); text-align:center;">
-            <div style="font-size:0.8rem; color:var(--text2);">Today's Data Transfer</div>
-            <div id="analyticsBytes" style="font-size:1.5rem; font-weight:bold; color:var(--primary);">0 MB</div>
+        <div class="drive-list" id="driveListUI"></div>
+        <div class="add-drive-form" id="addDriveForm">
+          <h4>Add New Google Drive</h4>
+          <div class="form-group">
+            <label>Drive Name (e.g. Personal, Movies)</label>
+            <input type="text" id="inName" placeholder="My Drive">
           </div>
-          <div style="background:var(--surface); padding:12px; border-radius:8px; border:1px solid var(--divider); text-align:center;">
-            <div style="font-size:0.8rem; color:var(--text2);">Unique Active Users</div>
-            <div id="analyticsUsers" style="font-size:1.5rem; font-weight:bold; color:#4caf50;">0</div>
+          <div class="form-group">
+            <label>Client ID</label>
+            <input type="text" id="inClientId" placeholder="xxx.apps.googleusercontent.com">
+          </div>
+          <div class="form-group">
+            <label>Client Secret</label>
+            <input type="text" id="inClientSecret" placeholder="GOCSPX-...">
+          </div>
+          <div class="form-group">
+            <label>Refresh Token</label>
+            <input type="text" id="inRefreshToken" placeholder="1//0g...">
+          </div>
+          <div style="display:flex; gap:10px; margin-top:8px;">
+            <button id="saveDriveBtn" class="btn btn-primary" onclick="saveNewDrive()">Save Drive</button>
+            <button class="btn" style="background:var(--surface3)" onclick="toggleAddForm()">Cancel</button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- TAB: SPEED -->
+      <div id="tab-speed" class="settings-pane">
+        <div style="display:flex; flex-direction:column; gap:12px;">
+          <h3>Speed & Performance Controls</h3>
+          <p style="font-size:0.8rem; color:var(--text2);">Control the download and streaming proxy speeds globally.</p>
+          <div class="form-group">
+            <label>Proxy Chunk Size (MB)</label>
+            <input type="number" id="inChunkSize" placeholder="2" value="2" min="1" max="100">
+            <span style="font-size:0.7rem; color:var(--text2);">Larger chunks increase max speed but use more RAM. (Default: 2MB)</span>
+          </div>
+          <div class="form-group">
+            <label>Speed Limit (MB/s) - Traffic Control</label>
+            <input type="number" id="inSpeedLimit" placeholder="0" value="0" min="0" step="0.1">
+            <span style="font-size:0.7rem; color:var(--text2);">Set to 0 for Unlimited Speed.</span>
+          </div>
+          <div class="form-group" style="flex-direction:row; align-items:center; gap:8px;">
+            <input type="checkbox" id="inDirectMode" style="width:18px; height:18px; accent-color:var(--primary);">
+            <label for="inDirectMode" style="font-weight:bold;">Enable Direct Download (Max Speed)</label>
+          </div>
+          <p style="font-size:0.7rem; color:#ffb74d; margin-top:-6px;">Warning: Direct mode connects directly to Google Drive (like AList). This gives Maximum ISP Speed, but briefly exposes your temporary access token in the URL.</p>
+          <div>
+            <button class="btn btn-primary" onclick="saveGlobalSettings()">Apply Speed Settings</button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- TAB: ANALYTICS -->
+      <div id="tab-analytics" class="settings-pane">
+        <div style="display:flex; flex-direction:column; gap:12px;">
+          <h3>📊 Analytics & Traffic Monitor</h3>
+          <p style="font-size:0.8rem; color:var(--text2);">Monitor how much data and users are flowing through your Drive Base today.</p>
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+            <div style="background:var(--surface); padding:12px; border-radius:8px; border:1px solid var(--divider); text-align:center;">
+              <div style="font-size:0.8rem; color:var(--text2);">Today's Data Transfer</div>
+              <div id="analyticsBytes" style="font-size:1.5rem; font-weight:bold; color:var(--primary);">0 MB</div>
+            </div>
+            <div style="background:var(--surface); padding:12px; border-radius:8px; border:1px solid var(--divider); text-align:center;">
+              <div style="font-size:0.8rem; color:var(--text2);">Unique Active Users</div>
+              <div id="analyticsUsers" style="font-size:1.5rem; font-weight:bold; color:#4caf50;">0</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- TAB: SECURITY -->
+      <div id="tab-security" class="settings-pane">
+        <div style="display:flex; flex-direction:column; gap:12px;">
+          <h3>🔒 Link Manager & Security</h3>
+          <p style="font-size:0.8rem; color:var(--text2);">Configure expiration times for your download and stream links so they cannot be reused indefinitely.</p>
+          <div class="form-group">
+            <label>Link Expiration Time (Hours)</label>
+            <input type="number" id="inLinkExpiry" placeholder="0" value="0" min="0">
+            <span style="font-size:0.7rem; color:var(--text2);">Set to 0 to make links never expire. If set to e.g. 2, links will only work for 2 hours after they are copied.</span>
+          </div>
+          <div>
+            <button class="btn btn-primary" onclick="saveGlobalSettings()">Save Security Settings</button>
           </div>
         </div>
       </div>
@@ -372,6 +404,7 @@ async function fetchGlobalSettings() {
       document.getElementById('inChunkSize').value = s.chunk_size_mb || 2;
       document.getElementById('inSpeedLimit').value = s.speed_limit_mb || 0;
       document.getElementById('inDirectMode').checked = s.direct_download_mode || false;
+      document.getElementById('inLinkExpiry').value = s.link_expiry_hours || 0;
     }
   } catch(e) { console.error("Could not fetch settings", e); }
 }
@@ -406,7 +439,8 @@ async function saveGlobalSettings() {
     const body = {
       chunk_size_mb: parseInt(document.getElementById('inChunkSize').value) || 2,
       speed_limit_mb: parseFloat(document.getElementById('inSpeedLimit').value) || 0,
-      direct_download_mode: document.getElementById('inDirectMode').checked
+      direct_download_mode: document.getElementById('inDirectMode').checked,
+      link_expiry_hours: parseFloat(document.getElementById('inLinkExpiry').value) || 0
     };
     const r = await fetch(`${PROXY}/settings`, {
       method: 'POST',
@@ -414,11 +448,11 @@ async function saveGlobalSettings() {
       body: JSON.stringify(body)
     });
     if(!r.ok) throw new Error("Failed to save settings");
-    alert("Speed Settings Applied!");
+    alert("Settings Applied Successfully!");
   } catch(e) {
     alert(e.message);
   } finally {
-    btn.textContent = "Apply Speed Settings";
+    btn.textContent = "Apply/Save Settings";
   }
 }
 
@@ -667,11 +701,21 @@ function navTo(i) {
   listFolder(navStack[navStack.length-1].id);
 }
 
-function openPanel(f, index) {
-  const streamUrl = `${PROXY}/stream?drive_id=${currentDriveId}&id=${f.id}&name=${encodeURIComponent(f.name)}`;
-  const dlUrl     = `${PROXY}/download?drive_id=${currentDriveId}&id=${f.id}&name=${encodeURIComponent(f.name)}`;
-  const isMedia   = f.mimeType && (f.mimeType.startsWith('video/') || f.mimeType.startsWith('audio/'));
+async function openPanel(f, index) {
+  let streamUrl = `${PROXY}/stream?drive_id=${currentDriveId}&id=${f.id}&name=${encodeURIComponent(f.name)}`;
+  let dlUrl     = `${PROXY}/download?drive_id=${currentDriveId}&id=${f.id}&name=${encodeURIComponent(f.name)}`;
   
+  // Fetch signature if expiry is active
+  try {
+    const r = await fetch(`${PROXY}/sign?drive_id=${currentDriveId}&id=${f.id}`);
+    const sigData = await r.json();
+    if(sigData.exp > 0) {
+      streamUrl += `&exp=${sigData.exp}&sig=${sigData.sig}`;
+      dlUrl     += `&exp=${sigData.exp}&sig=${sigData.sig}`;
+    }
+  } catch(e) { console.error("Could not sign link"); }
+
+  const isMedia   = f.mimeType && (f.mimeType.startsWith('video/') || f.mimeType.startsWith('audio/'));
   const absoluteStreamUrl = window.location.origin + streamUrl;
   const absoluteDlUrl     = window.location.origin + dlUrl;
 
