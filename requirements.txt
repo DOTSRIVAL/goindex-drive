@@ -1,6 +1,7 @@
 fastapi
 uvicorn[standard]
 httpx
+aiohttp
 huggingface_hub
 psycopg2-binary
 pymongo
