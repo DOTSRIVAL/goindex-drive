@@ -12,9 +12,76 @@ DRIVES_FILE = Path("drives.json")
 _drives: list[dict] = []          # [{id, name, client_id, client_secret, refresh_token}]
 _token_cache: dict[str, dict] = {}  # {drive_id: {token, expiry}}
 
+# ── DATABASE CONFIGURATION ──────────────────────────────────────────────────────
+DB_URL = os.environ.get("DATABASE_URL")
+postgres_conn = None
+mongo_collection = None
+
+if DB_URL:
+    try:
+        if DB_URL.startswith("postgres"):
+            import psycopg2
+            postgres_conn = psycopg2.connect(DB_URL)
+            with postgres_conn.cursor() as cur:
+                cur.execute("""
+                    CREATE TABLE IF NOT EXISTS drivebase_config (
+                        id integer PRIMARY KEY,
+                        drives_data text
+                    )
+                """)
+                postgres_conn.commit()
+            print("Connected to PostgreSQL successfully.")
+            
+        elif DB_URL.startswith("mongodb"):
+            from pymongo import MongoClient
+            client = MongoClient(DB_URL)
+            db = client.get_default_database(default="drivebase")
+            mongo_collection = db["config"]
+            print("Connected to MongoDB successfully.")
+    except Exception as e:
+        print("Database connection failed:", e)
+
+def load_db_drives():
+    try:
+        if postgres_conn:
+            with postgres_conn.cursor() as cur:
+                cur.execute("SELECT drives_data FROM drivebase_config WHERE id=1")
+                row = cur.fetchone()
+                if row and row[0]:
+                    return json.loads(row[0])
+        elif mongo_collection is not None:
+            doc = mongo_collection.find_one({"_id": "drives"})
+            if doc and "data" in doc:
+                return doc["data"]
+    except Exception as e:
+        print("Error loading from DB:", e)
+    return None
+
+def save_db_drives(drives_list):
+    try:
+        if postgres_conn:
+            with postgres_conn.cursor() as cur:
+                cur.execute("""
+                    INSERT INTO drivebase_config (id, drives_data) 
+                    VALUES (1, %s)
+                    ON CONFLICT (id) DO UPDATE SET drives_data = EXCLUDED.drives_data
+                """, (json.dumps(drives_list),))
+                postgres_conn.commit()
+        elif mongo_collection is not None:
+            mongo_collection.update_one(
+                {"_id": "drives"},
+                {"$set": {"data": drives_list}},
+                upsert=True
+            )
+    except Exception as e:
+        print("Error saving to DB:", e)
+
 def load_drives():
     global _drives
-    if DRIVES_FILE.exists():
+    db_data = load_db_drives()
+    if db_data is not None:
+        _drives = db_data
+    elif DRIVES_FILE.exists():
         try:
             _drives = json.loads(DRIVES_FILE.read_text())
         except:
@@ -54,10 +121,16 @@ def load_drives():
 def save_drives():
     # Don't save the env drives
     to_save = [d for d in _drives if not d["id"].startswith("env-drive")]
+    
+    # Save to Database if configured
+    if postgres_conn or mongo_collection is not None:
+        save_db_drives(to_save)
+        
     DRIVES_FILE.write_text(json.dumps(to_save, indent=2))
+    
     hf_token = os.environ.get("HF_TOKEN")
     space_id = os.environ.get("SPACE_ID")
-    if hf_token and space_id:
+    if hf_token and space_id and not (postgres_conn or mongo_collection is not None):
         try:
             from huggingface_hub import HfApi
             api = HfApi(token=hf_token)
