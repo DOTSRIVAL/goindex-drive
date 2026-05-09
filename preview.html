@@ -168,6 +168,11 @@ input[type=range]:hover::-webkit-slider-thumb { transform: scale(1.2); }
       <span class="material-icons" style="font-size: 14px;">speed</span>
       <span id="pingText">0 ms</span>
     </div>
+    
+    <div id="headerAnalytics" style="margin-left: 8px; font-size: 0.75rem; color: var(--text); display: flex; align-items: center; gap: 8px; background: var(--surface2); padding: 4px 8px; border-radius: 4px; border: 1px solid var(--divider);">
+      <div style="display:flex; align-items:center; gap:2px;" title="Today's Total Data Transfer"><span class="material-icons" style="font-size: 14px; color:var(--primary);">data_usage</span> <span id="headerBytes">0 MB</span></div>
+      <div style="display:flex; align-items:center; gap:2px;" title="Unique Active Users"><span class="material-icons" style="font-size: 14px; color:#ff9800;">people</span> <span id="headerUsers">0</span></div>
+    </div>
   </div>
   <div class="top-actions">
     <div class="search-box">
@@ -345,7 +350,11 @@ let allFiles = [];
 async function init() {
   await fetchDrives();
   await fetchGlobalSettings();
+  await fetchAnalytics();
   renderRootDrives();
+  
+  // Auto refresh analytics every 10 seconds
+  setInterval(fetchAnalytics, 10000);
   
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
@@ -375,9 +384,17 @@ async function fetchAnalytics() {
       const bytes = data.total_bytes || 0;
       const gb = (bytes / (1024*1024*1024)).toFixed(2);
       const mb = (bytes / (1024*1024)).toFixed(2);
+      const formattedBytes = bytes > 1024*1024*1024 ? `${gb} GB` : `${mb} MB`;
+      const usersCount = data.unique_users || 0;
       
-      document.getElementById('analyticsBytes').textContent = bytes > 1024*1024*1024 ? `${gb} GB` : `${mb} MB`;
-      document.getElementById('analyticsUsers').textContent = data.unique_users || 0;
+      document.getElementById('analyticsBytes').textContent = formattedBytes;
+      document.getElementById('analyticsUsers').textContent = usersCount;
+      
+      const hb = document.getElementById('headerBytes');
+      if(hb) hb.textContent = formattedBytes;
+      
+      const hu = document.getElementById('headerUsers');
+      if(hu) hu.textContent = usersCount;
     }
   } catch(e) { console.error("Could not fetch analytics", e); }
 }
