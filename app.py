@@ -178,15 +178,21 @@ _app_settings = {"chunk_size_mb": 2, "speed_limit_mb": 0, "direct_download_mode"
 # Format: {"YYYY-MM-DD": {"bytes": 0, "hits": 0, "ips": set()}}
 _analytics = {}
 
-def log_analytics(bytes_sent: int, ip: str):
+def log_analytics_hit(ip: str):
+    import datetime
+    today = str(datetime.date.today())
+    if today not in _analytics:
+        _analytics[today] = {"bytes": 0, "hits": 0, "ips": set()}
+    _analytics[today]["hits"] += 1
+    if ip:
+        _analytics[today]["ips"].add(ip)
+
+def log_analytics_bytes(bytes_sent: int):
     import datetime
     today = str(datetime.date.today())
     if today not in _analytics:
         _analytics[today] = {"bytes": 0, "hits": 0, "ips": set()}
     _analytics[today]["bytes"] += bytes_sent
-    _analytics[today]["hits"] += 1
-    if ip:
-        _analytics[today]["ips"].add(ip)
 
 @app.get("/analytics")
 async def get_analytics():
@@ -344,10 +350,17 @@ async def stream_file(request: Request, drive_id: str, id: str, name: str = "fil
                 start_time = time.time()
                 bytes_sent = 0
                 
+                client_ip = request.headers.get("x-forwarded-for", request.client.host if request.client else "unknown")
+                if "," in client_ip:
+                    client_ip = client_ip.split(",")[0].strip()
+                log_analytics_hit(client_ip)
+                
                 async for chunk in r.content.iter_chunked(chunk_bytes):
                     yield chunk
                     chunk_len = len(chunk)
                     bytes_sent += chunk_len
+                    log_analytics_bytes(chunk_len)  # Real-time traffic update
+                    
                     if speed_limit > 0:
                         expected_time = bytes_sent / speed_limit
                         elapsed_time = time.time() - start_time
@@ -356,12 +369,6 @@ async def stream_file(request: Request, drive_id: str, id: str, name: str = "fil
             finally:
                 r.close()
                 await session.close()
-                
-                # Log to analytics
-                client_ip = request.headers.get("x-forwarded-for", request.client.host if request.client else "unknown")
-                if "," in client_ip:
-                    client_ip = client_ip.split(",")[0].strip()
-                log_analytics(bytes_sent, client_ip)
 
         resp_h = {**CORS, "Accept-Ranges": "bytes"}
         ct = r.headers.get("content-type", "application/octet-stream")
