@@ -173,7 +173,13 @@ async def get_token(drive_id: str) -> str:
 CORS = {"Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "*"}
 
 # ── GLOBAL SETTINGS & ANALYTICS ───────────────────────────────────────────────
-_app_settings = {"chunk_size_mb": 2, "speed_limit_mb": 0, "direct_download_mode": False}
+_app_settings = {"chunk_size_mb": 2, "speed_limit_mb": 0, "direct_download_mode": False, "link_expiry_hours": 0}
+
+import hashlib
+import hmac
+import uuid
+# Unique secret for signing links, regenerates on container restart
+_app_secret = str(uuid.uuid4())
 
 # Format: {"YYYY-MM-DD": {"bytes": 0, "hits": 0, "ips": set()}}
 _analytics = {}
@@ -215,13 +221,27 @@ class SettingsIn(BaseModel):
     chunk_size_mb: int
     speed_limit_mb: float
     direct_download_mode: bool = False
+    link_expiry_hours: float = 0
 
 @app.post("/settings")
 async def update_settings(body: SettingsIn):
     _app_settings["chunk_size_mb"] = max(1, body.chunk_size_mb)
     _app_settings["speed_limit_mb"] = max(0.0, body.speed_limit_mb)
     _app_settings["direct_download_mode"] = body.direct_download_mode
+    _app_settings["link_expiry_hours"] = max(0.0, body.link_expiry_hours)
     return JSONResponse(_app_settings, headers=CORS)
+
+@app.get("/sign")
+async def sign_link(drive_id: str, id: str):
+    # This endpoint signs a link dynamically for the UI if expiry is enabled
+    hours = _app_settings.get("link_expiry_hours", 0)
+    if hours <= 0:
+        return JSONResponse({"exp": 0, "sig": ""}, headers=CORS)
+        
+    exp = int(time.time() + (hours * 3600))
+    msg = f"{drive_id}:{id}:{exp}"
+    sig = hmac.new(_app_secret.encode(), msg.encode(), hashlib.sha256).hexdigest()
+    return JSONResponse({"exp": exp, "sig": sig}, headers=CORS)
 
 # ── DRIVES API ────────────────────────────────────────────────────────────────
 class DriveIn(BaseModel):
@@ -323,17 +343,30 @@ async def ping_drive(drive_id: str):
 # ── STREAM / DOWNLOAD ─────────────────────────────────────────────────────────
 @app.get("/stream")
 @app.get("/download")
-async def stream_file(request: Request, drive_id: str, id: str, name: str = "file"):
+async def stream_file(request: Request, drive_id: str, id: str, name: str = "file", exp: int = 0, sig: str = ""):
     is_dl = request.url.path == "/download"
+    
+    # Verify signature if expiry is provided
+    if exp > 0:
+        if time.time() > exp:
+            return JSONResponse({"error": "This link has expired."}, status_code=403, headers=CORS)
+        expected_sig = hmac.new(_app_secret.encode(), f"{drive_id}:{id}:{exp}".encode(), hashlib.sha256).hexdigest()
+        if not hmac.compare_digest(sig, expected_sig):
+            return JSONResponse({"error": "Invalid link signature."}, status_code=403, headers=CORS)
+    else:
+        # If no expiry was provided but global settings require it, deny access
+        if _app_settings.get("link_expiry_hours", 0) > 0:
+            return JSONResponse({"error": "This file requires a signed expiring link. Generate a new link from Drive Base."}, status_code=403, headers=CORS)
+
     try:
         token   = await get_token(drive_id)
         
         # 302 Direct Download Mode (Max Speed, bypasses proxy)
         if _app_settings.get("direct_download_mode", False):
-            direct_url = f"https://www.googleapis.com/drive/v3/files/{id}?alt=media&access_token={token}"
+            direct_url = f"https://www.googleapis.com/drive/v3/files/{id}?alt=media&acknowledgeAbuse=true&access_token={token}"
             return Response(status_code=302, headers={"Location": direct_url})
             
-        api_url = f"https://www.googleapis.com/drive/v3/files/{id}?alt=media"
+        api_url = f"https://www.googleapis.com/drive/v3/files/{id}?alt=media&acknowledgeAbuse=true"
         hdrs    = {"Authorization": f"Bearer {token}"}
         rng     = request.headers.get("range")
         if rng: hdrs["Range"] = rng
