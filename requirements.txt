@@ -2,3 +2,5 @@ fastapi
 uvicorn[standard]
 httpx
 huggingface_hub
+psycopg2-binary
+pymongo
