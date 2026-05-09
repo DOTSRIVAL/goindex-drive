@@ -37,27 +37,57 @@ It is specifically designed for **Anime/Movie websites, File Hosts, and heavy do
 
 ## ⚡ Deployment Guide (Hugging Face Spaces)
 
-Drive Base PRO is highly optimized for Free Cloud Hosting platforms like **Hugging Face Spaces**.
+Drive Base PRO is highly optimized for Free Cloud Hosting platforms like **Hugging Face Spaces** using their Docker environment.
 
 ### Step 1: Create a PostgreSQL or MongoDB Database
 To ensure your connected Google Drives are never lost when Hugging Face restarts the server, you need a free database.
 1. Go to [Neon.tech](https://neon.tech/) and create a Free PostgreSQL database.
 2. Copy the `DATABASE_URL` connection string.
 
-### Step 2: Deploy to Hugging Face
-1. Create a new **Docker Space** on Hugging Face.
-2. Upload all the files from this repository.
-3. Go to your Space **Settings -> Variables and secrets**.
-4. Add a new Secret:
+### Step 2: Deploy to Hugging Face (Docker Setup)
+1. Log in to [Hugging Face](https://huggingface.co/) and click **New Space**.
+2. Give your space a name (e.g., `anime-drive-base`).
+3. **CRITICAL STEP:** Under **Select the Space SDK**, choose **Docker**, then select **Blank**.
+4. Set the Space hardware to `Free` and click **Create Space**.
+5. Once created, go to the **Files** tab and click **Add file -> Upload files**. Upload all the files from this repository (most importantly `app.py`, `Dockerfile`, `requirements.txt`, and `preview.html`).
+6. Hugging Face will automatically detect the `Dockerfile` and start building your proxy server.
+
+### Step 3: Add Database Secrets
+1. In your Hugging Face Space, click the **Settings** tab.
+2. Scroll down to **Variables and secrets**.
+3. Click **New secret**.
    - **Name:** `DATABASE_URL`
    - **Value:** *(Paste your NeonDB or MongoDB URL here)*
+4. Click Save. The Space will restart and connect to your database.
 
-### Step 3: Add Your Google Drive
+### Step 4: Add Your Google Drive
 1. Open your deployed Drive Base PRO website.
 2. Click the **Settings (⚙)** gear icon.
 3. Go to the **☁ Drives** tab.
 4. Add your Google Drive `Client ID`, `Client Secret`, and `Refresh Token`. (Generate these from Google Cloud Console).
 5. Done! Your files will load instantly and the configuration is saved to your database permanently!
+
+---
+
+## 🌍 Alternative Hosting Platforms
+
+Hugging Face isn't the only place you can host Drive Base PRO. Since this app is fully Dockerized and uses Python FastAPI, you can host it anywhere that supports Docker or Python:
+
+1. **Koyeb / Render / Railway (PaaS):**
+   - Connect your GitHub repository to Koyeb, Render, or Railway.
+   - They will automatically detect the `Dockerfile` and build the app.
+   - Add your `DATABASE_URL` in their Environment Variables section.
+   
+2. **Private VPS (Contabo, Hetzner, AWS, DigitalOcean):**
+   - Buy a cheap Linux VPS (e.g., Ubuntu).
+   - Clone the repo: `git clone https://github.com/DOTSRIVAL/goindex-drive.git`
+   - Install Docker.
+   - Run the app via Docker:
+     ```bash
+     docker build -t drivebase .
+     docker run -d -p 7860:7860 -e DATABASE_URL="your_db_url_here" drivebase
+     ```
+   - *Advantage:* A private VPS gives you 100% Dedicated Bandwidth, meaning your speeds will be incredibly consistent without relying on free shared servers!
 
 ---
 
