@@ -173,7 +173,7 @@ async def get_token(drive_id: str) -> str:
 CORS = {"Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "*"}
 
 # ── GLOBAL SETTINGS ───────────────────────────────────────────────────────────
-_app_settings = {"chunk_size_mb": 2, "speed_limit_mb": 0}
+_app_settings = {"chunk_size_mb": 2, "speed_limit_mb": 0, "direct_download_mode": False}
 
 @app.get("/settings")
 async def get_settings():
@@ -182,11 +182,13 @@ async def get_settings():
 class SettingsIn(BaseModel):
     chunk_size_mb: int
     speed_limit_mb: float
+    direct_download_mode: bool = False
 
 @app.post("/settings")
 async def update_settings(body: SettingsIn):
     _app_settings["chunk_size_mb"] = max(1, body.chunk_size_mb)
     _app_settings["speed_limit_mb"] = max(0.0, body.speed_limit_mb)
+    _app_settings["direct_download_mode"] = body.direct_download_mode
     return JSONResponse(_app_settings, headers=CORS)
 
 # ── DRIVES API ────────────────────────────────────────────────────────────────
@@ -293,6 +295,12 @@ async def stream_file(request: Request, drive_id: str, id: str, name: str = "fil
     is_dl = request.url.path == "/download"
     try:
         token   = await get_token(drive_id)
+        
+        # 302 Direct Download Mode (Max Speed, bypasses proxy)
+        if _app_settings.get("direct_download_mode", False):
+            direct_url = f"https://www.googleapis.com/drive/v3/files/{id}?alt=media&access_token={token}"
+            return Response(status_code=302, headers={"Location": direct_url})
+            
         api_url = f"https://www.googleapis.com/drive/v3/files/{id}?alt=media"
         hdrs    = {"Authorization": f"Bearer {token}"}
         rng     = request.headers.get("range")
