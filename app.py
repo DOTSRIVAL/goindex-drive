@@ -305,10 +305,9 @@ async def stream_file(request: Request, drive_id: str, id: str, name: str = "fil
         hdrs    = {"Authorization": f"Bearer {token}"}
         rng     = request.headers.get("range")
         if rng: hdrs["Range"] = rng
-
-        client = httpx.AsyncClient(timeout=None)
-        req = client.build_request("GET", api_url, headers=hdrs)
-        r = await client.send(req, stream=True)
+        import aiohttp
+        session = aiohttp.ClientSession()
+        r = await session.get(api_url, headers=hdrs)
 
         async def gen():
             import asyncio
@@ -319,7 +318,7 @@ async def stream_file(request: Request, drive_id: str, id: str, name: str = "fil
                 start_time = time.time()
                 bytes_sent = 0
                 
-                async for chunk in r.aiter_bytes(chunk_bytes):
+                async for chunk in r.content.iter_chunked(chunk_bytes):
                     yield chunk
                     if speed_limit > 0:
                         bytes_sent += len(chunk)
@@ -328,23 +327,23 @@ async def stream_file(request: Request, drive_id: str, id: str, name: str = "fil
                         if elapsed_time < expected_time:
                             await asyncio.sleep(expected_time - elapsed_time)
             finally:
-                await r.aclose()
-                await client.aclose()
+                r.close()
+                await session.close()
 
         resp_h = {**CORS, "Accept-Ranges": "bytes"}
         ct = r.headers.get("content-type", "application/octet-stream")
         
         if "content-length" in r.headers:
-            resp_h["Content-Length"] = r.headers["content-length"]
+            resp_h["Content-Length"] = str(r.headers["content-length"])
         if "content-range" in r.headers:
-            resp_h["Content-Range"] = r.headers["content-range"]
+            resp_h["Content-Range"] = str(r.headers["content-range"])
 
         if is_dl:
             resp_h["Content-Disposition"] = f'attachment; filename="{name}"'
         else:
             resp_h["Content-Disposition"] = f'inline; filename="{name}"'
 
-        return StreamingResponse(gen(), status_code=r.status_code,
+        return StreamingResponse(gen(), status_code=r.status,
                                  headers=resp_h, media_type=ct)
     except Exception as e:
         return JSONResponse({"error": str(e)}, status_code=500)
