@@ -257,6 +257,12 @@ input[type=range]:hover::-webkit-slider-thumb { transform: scale(1.2); }
           <span style="font-size:0.7rem; color:var(--text2);">Set to 0 for Unlimited Speed.</span>
         </div>
         
+        <div class="form-group" style="flex-direction:row; align-items:center; gap:8px;">
+          <input type="checkbox" id="inDirectMode" style="width:18px; height:18px; accent-color:var(--primary);">
+          <label for="inDirectMode" style="font-weight:bold;">Enable Direct Download (Max Speed)</label>
+        </div>
+        <p style="font-size:0.7rem; color:#ffb74d; margin-top:-6px;">Warning: Direct mode connects directly to Google Drive (like AList). This gives Maximum ISP Speed, but briefly exposes your temporary access token in the URL.</p>
+        
         <div>
           <button class="btn btn-primary" onclick="saveGlobalSettings()">Apply Speed Settings</button>
         </div>
@@ -338,6 +344,7 @@ async function fetchGlobalSettings() {
       const s = await r.json();
       document.getElementById('inChunkSize').value = s.chunk_size_mb || 2;
       document.getElementById('inSpeedLimit').value = s.speed_limit_mb || 0;
+      document.getElementById('inDirectMode').checked = s.direct_download_mode || false;
     }
   } catch(e) { console.error("Could not fetch settings", e); }
 }
@@ -348,7 +355,8 @@ async function saveGlobalSettings() {
   try {
     const body = {
       chunk_size_mb: parseInt(document.getElementById('inChunkSize').value) || 2,
-      speed_limit_mb: parseFloat(document.getElementById('inSpeedLimit').value) || 0
+      speed_limit_mb: parseFloat(document.getElementById('inSpeedLimit').value) || 0,
+      direct_download_mode: document.getElementById('inDirectMode').checked
     };
     const r = await fetch(`${PROXY}/settings`, {
       method: 'POST',
