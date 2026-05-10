@@ -286,7 +286,7 @@ async def login(body: LoginIn):
     # Check Admin
     if body.username == ADMIN_USER and body.password == ADMIN_PASS:
         token = secrets.token_hex(16)
-        return JSONResponse({"token": token, "username": ADMIN_USER, "role": "admin"}, headers=CORS)
+        return JSONResponse({"token": token, "username": ADMIN_USER, "display_name": "Admin", "role": "admin"}, headers=CORS)
     
     # Check Normal User
     # Regular User Check
