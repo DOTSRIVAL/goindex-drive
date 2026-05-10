@@ -27,6 +27,7 @@ It is specifically designed for **Anime/Movie websites, File Hosts, and heavy do
 - 🛑 **Global Traffic Controller:** Set a hard speed limit (e.g., 1.5 MB/s) per connection to save your server bandwidth and prevent abuse.
 - 🔒 **Multi-User System:** Built-in **Login & Register** system. Support for Admin, Registered Users, and Guest access.
 - ⚙️ **Admin Protection:** Hide your sensitive settings from the public. Only the Admin can see and modify Drive configurations.
+- 👥 **User Management Dashboard:** Exclusive Admin tab to view a list of all registered users (Username & Display Name) directly from the database.
 - 📱 **Pro UI Interface:** Modern, dark-mode, fully mobile-responsive interface with a tabbed Settings dashboard.
 - 🎬 **In-Browser Player:** Stream 1080p media natively inside the browser without downloading!
 
