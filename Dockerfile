@@ -1,27 +1,25 @@
 FROM python:3.11-slim
 
-# Install system dependencies needed for psycopg2
-USER root
+# Install system dependencies as root FIRST
 RUN apt-get update && apt-get install -y \
     gcc \
     libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Hugging Face Spaces runs as a non-root user (UID 1000)
-RUN useradd -m -u 1000 user
-USER user
-ENV HOME=/home/user \
-    PATH=/home/user/.local/bin:$PATH
+WORKDIR /app
 
-WORKDIR $HOME/app
-
-# Install Python dependencies
-COPY --chown=user requirements.txt .
+# Install Python packages as root (system-wide, accessible to all users)
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy all project files
-COPY --chown=user . .
+# Copy project files
+COPY . .
+
+# Create HF-required non-root user (UID 1000) and give ownership
+RUN useradd -m -u 1000 user && chown -R user:user /app
+USER user
 
 EXPOSE 7860
 
-CMD ["python", "app.py"]
+# Use uvicorn directly - more reliable than python app.py
+CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "7860"]
