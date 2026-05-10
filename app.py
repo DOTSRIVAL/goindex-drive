@@ -12,10 +12,14 @@ DRIVES_FILE = Path("drives.json")
 _drives: list[dict] = []          # [{id, name, client_id, client_secret, refresh_token}]
 _token_cache: dict[str, dict] = {}  # {drive_id: {token, expiry}}
 
-# ── DATABASE CONFIGURATION ──────────────────────────────────────────────────────
+# ── AUTH & DATABASE CONFIG ────────────────────────────────────────────────────
 DB_URL = os.environ.get("DATABASE_URL")
+ADMIN_USER = os.getenv("ADMIN_USER", "admin")
+ADMIN_PASS = os.getenv("ADMIN_PASS", "admin123")
+
 postgres_conn = None
 mongo_collection = None
+user_collection = None
 
 if DB_URL:
     try:
@@ -29,6 +33,13 @@ if DB_URL:
                         drives_data text
                     )
                 """)
+                cur.execute("""
+                    CREATE TABLE IF NOT EXISTS drivebase_users (
+                        username TEXT PRIMARY KEY,
+                        password TEXT,
+                        role TEXT
+                    )
+                """)
                 postgres_conn.commit()
             print("Connected to PostgreSQL successfully.")
             
@@ -37,9 +48,40 @@ if DB_URL:
             client = MongoClient(DB_URL)
             db = client.get_default_database(default="drivebase")
             mongo_collection = db["config"]
+            user_collection = db["users"]
             print("Connected to MongoDB successfully.")
     except Exception as e:
         print("Database connection failed:", e)
+
+# ── IN-MEMORY FALLBACK ────────────────────────────────────────────────────────
+import secrets
+_users = {} # {username: {"password": "", "role": ""}}
+
+def load_users():
+    global _users
+    try:
+        if postgres_conn:
+            with postgres_conn.cursor() as cur:
+                cur.execute("SELECT username, password, role FROM drivebase_users")
+                rows = cur.fetchall()
+                _users = {r[0]: {"password": r[1], "role": r[2]} for r in rows}
+        elif user_collection is not None:
+            for doc in user_collection.find():
+                _users[doc["username"]] = {"password": doc["password"], "role": doc["role"]}
+    except: pass
+
+load_users()
+
+def save_user(username, password, role):
+    _users[username] = {"password": password, "role": role}
+    try:
+        if postgres_conn:
+            with postgres_conn.cursor() as cur:
+                cur.execute("INSERT INTO drivebase_users (username, password, role) VALUES (%s, %s, %s) ON CONFLICT (username) DO UPDATE SET password=EXCLUDED.password, role=EXCLUDED.role", (username, password, role))
+            postgres_conn.commit()
+        elif user_collection is not None:
+            user_collection.update_one({"username": username}, {"$set": {"password": password, "role": role}}, upsert=True)
+    except: pass
 
 def load_db_drives():
     try:
@@ -213,8 +255,36 @@ async def get_analytics():
         "unique_users": len(data["ips"])
     }, headers=CORS)
 
+# ── AUTH ENDPOINTS ────────────────────────────────────────────────────────────
+class LoginIn(BaseModel):
+    username: str
+    password: str
+
+@app.post("/register")
+async def register(body: LoginIn):
+    if body.username in _users:
+        return JSONResponse({"error": "User already exists"}, status_code=400, headers=CORS)
+    save_user(body.username, body.password, "user")
+    return JSONResponse({"message": "User registered successfully"}, headers=CORS)
+
+@app.post("/login")
+async def login(body: LoginIn):
+    # Check Admin
+    if body.username == ADMIN_USER and body.password == ADMIN_PASS:
+        token = secrets.token_hex(16)
+        return JSONResponse({"token": token, "username": ADMIN_USER, "role": "admin"}, headers=CORS)
+    
+    # Check Normal User
+    user = _users.get(body.username)
+    if user and user["password"] == body.password:
+        token = secrets.token_hex(16)
+        return JSONResponse({"token": token, "username": body.username, "role": user["role"]}, headers=CORS)
+    
+    return JSONResponse({"error": "Invalid credentials"}, status_code=401, headers=CORS)
+
 @app.get("/settings")
-async def get_settings():
+async def get_settings(admin_check: str = ""):
+    # Simplified admin check for settings view
     return JSONResponse(_app_settings, headers=CORS)
 
 class SettingsIn(BaseModel):
@@ -224,7 +294,9 @@ class SettingsIn(BaseModel):
     link_expiry_hours: float = 0
 
 @app.post("/settings")
-async def update_settings(body: SettingsIn):
+async def update_settings(body: SettingsIn, admin_pass: str = ""):
+    if admin_pass != ADMIN_PASS:
+        return JSONResponse({"error": "Unauthorized"}, status_code=403, headers=CORS)
     _app_settings["chunk_size_mb"] = max(1, body.chunk_size_mb)
     _app_settings["speed_limit_mb"] = max(0.0, body.speed_limit_mb)
     _app_settings["direct_download_mode"] = body.direct_download_mode
@@ -255,7 +327,9 @@ async def list_drives():
     return JSONResponse(_drives, headers=CORS)
 
 @app.post("/drives")
-async def add_drive(body: DriveIn):
+async def add_drive(body: DriveIn, admin_pass: str = ""):
+    if admin_pass != ADMIN_PASS:
+        return JSONResponse({"error": "Unauthorized"}, status_code=403, headers=CORS)
     import uuid
     drive_id = str(uuid.uuid4())[:8]
     drive = {"id": drive_id, "name": body.name, "client_id": body.client_id,
