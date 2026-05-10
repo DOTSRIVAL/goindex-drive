@@ -349,7 +349,7 @@ async def delete_drive(drive_id: str, admin_pass: str = ""):
 
 # ── FILE LISTING ──────────────────────────────────────────────────────────────
 @app.get("/list")
-async def list_files(drive_id: str, folder_id: str = "root"):
+async def list_files(drive_id: str, folder_id: str = "root", orderBy: str = "folder,name"):
     try:
         token = await get_token(drive_id)
         async with httpx.AsyncClient(timeout=30) as client:
@@ -359,6 +359,7 @@ async def list_files(drive_id: str, folder_id: str = "root"):
                     "q": f"'{folder_id}' in parents and trashed=false",
                     "fields": "files(id,name,mimeType,size,modifiedTime)",
                     "pageSize": "1000",
+                    "orderBy": orderBy,
                     "supportsAllDrives": "true",
                     "includeItemsFromAllDrives": "true"
                 },
