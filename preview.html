@@ -168,6 +168,16 @@ input[type=range]:hover::-webkit-slider-thumb { transform: scale(1.2); }
 .settings-pane.active { display: block; animation: fadeIn 0.2s ease; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
+/* PASSWORD TOGGLE */
+.pass-wrapper { position: relative; }
+.pass-eye { position: absolute; right: 10px; top: 38px; cursor: pointer; color: var(--text2); font-size: 20px !important; }
+
+/* USER LIST TABLE */
+.user-table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+.user-table th, .user-table td { text-align: left; padding: 12px; border-bottom: 1px solid var(--divider); }
+.user-table th { color: var(--text2); font-weight: 500; font-size: 0.85rem; }
+.user-badge { background: var(--surface3); padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; color: var(--primary); }
+
 /* AUTH OVERLAY */
 .auth-overlay { position: fixed; inset: 0; background: #000; z-index: 1000; display: flex; align-items: center; justify-content: center; }
 .auth-card { background: var(--surface); padding: 32px; border-radius: 16px; width: 360px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); border: 1px solid var(--divider); }
@@ -189,13 +199,18 @@ input[type=range]:hover::-webkit-slider-thumb { transform: scale(1.2); }
     <h2 id="authTitle">Welcome Back</h2>
     <p id="authSubtitle">Login to access your Drive Base</p>
     
+    <div class="form-group" id="regDisplayGroup" style="display:none;">
+      <label>Display Name</label>
+      <input type="text" id="authDisplayName" placeholder="Your Name (e.g. Tamil)">
+    </div>
     <div class="form-group">
       <label>Username</label>
       <input type="text" id="authUser" placeholder="Enter username">
     </div>
-    <div class="form-group">
+    <div class="form-group pass-wrapper">
       <label>Password</label>
       <input type="password" id="authPass" placeholder="Enter password">
+      <span class="material-icons pass-eye" onclick="togglePass('authPass', this)">visibility</span>
     </div>
     
     <button class="btn btn-primary auth-btn" onclick="handleAuth()" id="authMainBtn">Login</button>
@@ -264,8 +279,9 @@ input[type=range]:hover::-webkit-slider-thumb { transform: scale(1.2); }
       <div class="settings-tabs">
         <div class="settings-tab active" onclick="switchTab('tab-drives', this)">☁ Drives</div>
         <div class="settings-tab" onclick="switchTab('tab-speed', this)">⚡ Speed</div>
-        <div class="settings-tab" onclick="switchTab('tab-analytics', this)">📊 Analytics</div>
-        <div class="settings-tab" onclick="switchTab('tab-security', this)">🔒 Link Security</div>
+        <div class="settings-tab" onclick="switchTab('tabAnalytics', this)">📊 Analytics</div>
+        <div class="settings-tab" onclick="switchTab('tabSecurity', this)">🔒 Link Security</div>
+        <div class="settings-tab" onclick="switchTab('tabUsers', this); fetchUsers()">👥 Users</div>
       </div>
       
       <!-- TAB: DRIVES -->
@@ -422,6 +438,7 @@ let isRegisterMode = false;
 
 function toggleAuthMode() {
   isRegisterMode = !isRegisterMode;
+  document.getElementById('regDisplayGroup').style.display = isRegisterMode ? 'block' : 'none';
   document.getElementById('authTitle').textContent = isRegisterMode ? "Create Account" : "Welcome Back";
   document.getElementById('authSubtitle').textContent = isRegisterMode ? "Register to save your drives" : "Login to access your Drive Base";
   document.getElementById('authMainBtn').textContent = isRegisterMode ? "Register" : "Login";
@@ -431,13 +448,14 @@ function toggleAuthMode() {
 async function handleAuth() {
   const u = document.getElementById('authUser').value;
   const p = document.getElementById('authPass').value;
+  const dname = document.getElementById('authDisplayName').value;
   if(!u || !p) return alert("Please fill all fields");
   
   const endpoint = isRegisterMode ? '/register' : '/login';
   const r = await fetch(`${PROXY}${endpoint}`, {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({username: u, password: p})
+    body: JSON.stringify({username: u, password: p, display_name: dname})
   });
   
   const d = await r.json();
@@ -482,6 +500,40 @@ function completeLogin(user) {
   }
   
   initApp();
+}
+
+function togglePass(id, el) {
+  const inp = document.getElementById(id);
+  if (inp.type === 'password') {
+    inp.type = 'text';
+    el.textContent = 'visibility_off';
+  } else {
+    inp.type = 'password';
+    el.textContent = 'visibility';
+  }
+}
+
+async function fetchUsers() {
+  const body = document.getElementById('userListBody');
+  body.innerHTML = '<tr><td colspan="3" style="text-align:center;">Loading users...</td></tr>';
+  try {
+    const pass = localStorage.getItem('drive_pass') || '';
+    const r = await fetch(`${PROXY}/users?admin_pass=${pass}`);
+    if(!r.ok) throw new Error("Failed to load users");
+    const data = await r.json();
+    body.innerHTML = '';
+    data.forEach(u => {
+      body.innerHTML += `
+        <tr>
+          <td><b>${u.display_name}</b></td>
+          <td style="color:var(--text2)">${u.username}</td>
+          <td><span class="user-badge">${u.role.toUpperCase()}</span></td>
+        </tr>
+      `;
+    });
+  } catch(e) {
+    body.innerHTML = `<tr><td colspan="3" style="color:#ff5252; text-align:center;">${e.message}</td></tr>`;
+  }
 }
 
 async function init() {
