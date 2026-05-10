@@ -2,13 +2,13 @@ import os, time, json, httpx, secrets, hashlib, hmac, uuid, asyncio
 from pathlib import Path
 from fastapi import FastAPI, Request, Response
 from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
-from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import uvicorn
 
+from fastapi.middleware.cors import CORSMiddleware
+
 app = FastAPI()
 
-# ── CORS SETUP ────────────────────────────────────────────────────────────────
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -22,13 +22,15 @@ DRIVES_FILE   = Path("drives.json")
 DB_URL        = os.environ.get("DATABASE_URL", "")
 ADMIN_USER    = os.environ.get("ADMIN_USER", "admin")
 ADMIN_PASS    = os.environ.get("ADMIN_PASS", "admin123")
-APP_SECRET    = os.environ.get("APP_SECRET", "drivebase-pro-secret-key-dotsrival")
 
 _drives:      list[dict] = []
 _token_cache: dict       = {}
 _users:       dict       = {}  # {username: {password, display_name, role}}
 _app_settings = {"chunk_size_mb": 2, "speed_limit_mb": 0.0, "direct_download_mode": False, "link_expiry_hours": 0.0}
+_app_secret   = os.environ.get("APP_SECRET", str(uuid.uuid4()))
 _analytics:   dict       = {}
+
+CORS = {"Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "*"}
 
 # ── DATABASE SETUP ────────────────────────────────────────────────────────────
 postgres_conn    = None
@@ -173,7 +175,7 @@ def load_drives():
         except Exception as e:
             print(f"[Drives] Error reading drives.json: {e}")
 
-    # 3. Always append/insert drives from Environment Variables
+    # 3. Always append/insert drives from Environment Variables (if not already present)
     cid = os.environ.get("CLIENT_ID")
     cs  = os.environ.get("CLIENT_SECRET")
     rt  = os.environ.get("REFRESH_TOKEN")
@@ -246,7 +248,7 @@ async def get_analytics():
     import datetime
     today = str(datetime.date.today())
     data = _analytics.get(today, {"bytes": 0, "hits": 0, "ips": set()})
-    return JSONResponse({"date": today, "total_bytes": data["bytes"], "total_hits": data["hits"], "unique_users": len(data["ips"])})
+    return JSONResponse({"date": today, "total_bytes": data["bytes"], "total_hits": data["hits"], "unique_users": len(data["ips"])}, headers=CORS)
 
 # ── AUTH ENDPOINTS ────────────────────────────────────────────────────────────
 class LoginIn(BaseModel):
@@ -257,33 +259,33 @@ class LoginIn(BaseModel):
 @app.post("/register")
 async def register(body: LoginIn):
     if body.username in _users:
-        return JSONResponse({"error": "User already exists"}, status_code=400)
+        return JSONResponse({"error": "User already exists"}, status_code=400, headers=CORS)
     save_user(body.username, body.password, body.display_name or body.username, "user")
-    return JSONResponse({"message": "Registered successfully"})
+    return JSONResponse({"message": "Registered successfully"}, headers=CORS)
 
 @app.post("/login")
 async def login(body: LoginIn):
     # Admin check
     if body.username == ADMIN_USER and body.password == ADMIN_PASS:
         token = secrets.token_hex(16)
-        return JSONResponse({"token": token, "username": ADMIN_USER, "display_name": "Admin", "role": "admin"})
+        return JSONResponse({"token": token, "username": ADMIN_USER, "display_name": "Admin", "role": "admin"}, headers=CORS)
     # Normal user check
     u = _users.get(body.username)
     if u and u["password"] == body.password:
         token = secrets.token_hex(16)
-        return JSONResponse({"token": token, "username": body.username, "display_name": u.get("display_name", body.username), "role": u["role"]})
-    return JSONResponse({"error": "Invalid credentials"}, status_code=401)
+        return JSONResponse({"token": token, "username": body.username, "display_name": u.get("display_name", body.username), "role": u["role"]}, headers=CORS)
+    return JSONResponse({"error": "Invalid credentials"}, status_code=401, headers=CORS)
 
 @app.get("/users")
 async def list_users(admin_pass: str = ""):
     if admin_pass != ADMIN_PASS:
-        return JSONResponse({"error": "Unauthorized"}, status_code=403)
-    return JSONResponse([{"username": u, "display_name": d["display_name"], "role": d["role"]} for u, d in _users.items()])
+        return JSONResponse({"error": "Unauthorized"}, status_code=403, headers=CORS)
+    return JSONResponse([{"username": u, "display_name": d["display_name"], "role": d["role"]} for u, d in _users.items()], headers=CORS)
 
 # ── SETTINGS ENDPOINTS ────────────────────────────────────────────────────────
 @app.get("/settings")
 async def get_settings():
-    return JSONResponse(_app_settings)
+    return JSONResponse(_app_settings, headers=CORS)
 
 class SettingsIn(BaseModel):
     chunk_size_mb: int = 2
@@ -294,19 +296,19 @@ class SettingsIn(BaseModel):
 @app.post("/settings")
 async def update_settings(body: SettingsIn, admin_pass: str = ""):
     if admin_pass != ADMIN_PASS:
-        return JSONResponse({"error": "Unauthorized"}, status_code=403)
+        return JSONResponse({"error": "Unauthorized"}, status_code=403, headers=CORS)
     _app_settings["chunk_size_mb"]        = max(1, body.chunk_size_mb)
     _app_settings["speed_limit_mb"]       = max(0.0, body.speed_limit_mb)
     _app_settings["direct_download_mode"] = body.direct_download_mode
     _app_settings["link_expiry_hours"]    = max(0.0, body.link_expiry_hours)
-    return JSONResponse(_app_settings)
+    return JSONResponse(_app_settings, headers=CORS)
 
 # ── DRIVES ENDPOINTS ──────────────────────────────────────────────────────────
 @app.get("/drives")
 async def get_drives(admin_pass: str = ""):
     if admin_pass == ADMIN_PASS:
-        return JSONResponse(_drives)
-    return JSONResponse([{"id": d["id"], "name": d["name"]} for d in _drives])
+        return JSONResponse(_drives, headers=CORS)
+    return JSONResponse([{"id": d["id"], "name": d["name"]} for d in _drives], headers=CORS)
 
 class DriveIn(BaseModel):
     name: str
@@ -339,11 +341,11 @@ async def update_drive(drive_id: str, body: DriveIn, admin_pass: str = ""):
 @app.delete("/drives/{drive_id}")
 async def delete_drive(drive_id: str, admin_pass: str = ""):
     if admin_pass != ADMIN_PASS:
-        return JSONResponse({"error": "Unauthorized"}, status_code=403)
+        return JSONResponse({"error": "Unauthorized"}, status_code=403, headers=CORS)
     global _drives
     _drives = [d for d in _drives if d["id"] != drive_id]
     save_drives()
-    return JSONResponse({"message": "Drive deleted"})
+    return JSONResponse({"message": "Drive deleted"}, headers=CORS)
 
 # ── FILE LISTING ──────────────────────────────────────────────────────────────
 @app.get("/list")
@@ -365,11 +367,11 @@ async def list_files(drive_id: str, folder_id: str = "root"):
             data = r.json()
             if r.status_code != 200:
                 error_msg = data.get("error", {}).get("message", "Google API Error")
-                return JSONResponse({"error": error_msg}, status_code=r.status_code)
-            return JSONResponse(data)
+                return JSONResponse({"error": error_msg}, status_code=r.status_code, headers=CORS)
+            return JSONResponse(data, headers=CORS)
     except Exception as e:
         print(f"[List] Error: {e}")
-        return JSONResponse({"error": str(e)}, status_code=500)
+        return JSONResponse({"error": str(e)}, status_code=500, headers=CORS)
 
 @app.get("/meta/{drive_id}/{file_id}")
 async def get_meta(drive_id: str, file_id: str):
@@ -384,19 +386,20 @@ async def get_meta(drive_id: str, file_id: str):
             data = r.json()
             if r.status_code != 200:
                 error_msg = data.get("error", {}).get("message", "Google API Error")
-                return JSONResponse({"error": error_msg}, status_code=r.status_code)
-            return JSONResponse(data)
+                return JSONResponse({"error": error_msg}, status_code=r.status_code, headers=CORS)
+            return JSONResponse(data, headers=CORS)
     except Exception as e:
-        return JSONResponse({"error": str(e)}, status_code=500)
+        return JSONResponse({"error": str(e)}, status_code=500, headers=CORS)
 
+# ── FILE STREAMING ────────────────────────────────────────────────────────────
 @app.get("/sign")
 async def sign_link(drive_id: str, id: str):
     expiry_hours = _app_settings.get("link_expiry_hours", 0)
     if expiry_hours <= 0:
-        return JSONResponse({"exp": 0, "sig": ""})
+        return JSONResponse({"exp": 0, "sig": ""}, headers=CORS)
     exp = int(time.time() + expiry_hours * 3600)
-    sig = hmac.HMAC(APP_SECRET.encode(), f"{id}:{exp}".encode(), hashlib.sha256).hexdigest()
-    return JSONResponse({"exp": exp, "sig": sig})
+    sig = hmac.HMAC(_app_secret.encode(), f"{id}:{exp}".encode(), hashlib.sha256).hexdigest()
+    return JSONResponse({"exp": exp, "sig": sig}, headers=CORS)
 
 @app.get("/ping/{drive_id}")
 async def ping(drive_id: str):
@@ -404,11 +407,10 @@ async def ping(drive_id: str):
     try:
         await get_token(drive_id)
         ms = int((time.time() - start) * 1000)
-        return JSONResponse({"status": "online", "ms": ms})
+        return JSONResponse({"status": "online", "ms": ms}, headers=CORS)
     except Exception as e:
-        return JSONResponse({"status": "error", "message": str(e)})
+        return JSONResponse({"status": "error", "message": str(e)}, headers=CORS)
 
-# ── FILE STREAMING ────────────────────────────────────────────────────────────
 @app.get("/stream")
 @app.get("/download")
 @app.get("/stream/{drive_id}/{file_id}")
@@ -418,7 +420,7 @@ async def stream_file(request: Request, drive_id: str = None, file_id: str = Non
     file_id = file_id or id or request.query_params.get("id")
 
     if not drive_id or not file_id:
-        return JSONResponse({"error": "Missing drive_id or file_id"}, status_code=400)
+        return JSONResponse({"error": "Missing drive_id or file_id"}, status_code=400, headers=CORS)
 
     is_dl = "/dl/" in request.url.path or "/download" in request.url.path
     ip = request.client.host if request.client else ""
@@ -430,12 +432,12 @@ async def stream_file(request: Request, drive_id: str = None, file_id: str = Non
         sig  = request.query_params.get("sig", "")
         exp  = request.query_params.get("exp", "")
         if not sig or not exp:
-            return JSONResponse({"error": "Link expired or invalid"}, status_code=403)
-        expected = hmac.HMAC(APP_SECRET.encode(), f"{file_id}:{exp}".encode(), hashlib.sha256).hexdigest()
+            return JSONResponse({"error": "Link expired or invalid"}, status_code=403, headers=CORS)
+        expected = hmac.HMAC(_app_secret.encode(), f"{file_id}:{exp}".encode(), hashlib.sha256).hexdigest()
         if not hmac.compare_digest(sig, expected):
-            return JSONResponse({"error": "Invalid signature"}, status_code=403)
+            return JSONResponse({"error": "Invalid signature"}, status_code=403, headers=CORS)
         if time.time() > float(exp):
-            return JSONResponse({"error": "Link has expired"}, status_code=403)
+            return JSONResponse({"error": "Link has expired"}, status_code=403, headers=CORS)
 
     try:
         token = await get_token(drive_id)
@@ -446,9 +448,8 @@ async def stream_file(request: Request, drive_id: str = None, file_id: str = Non
         range_header = request.headers.get("range", "")
 
         if direct_mode:
-            # Note: Direct redirect to Google API often fails in browsers without auth headers.
-            # We provide it as an option for advanced users/tools.
-            redirect_url = f"https://www.googleapis.com/drive/v3/files/{file_id}?alt=media&acknowledgeAbuse=true"
+            # Redirect to Google API with access token in query param for better compatibility
+            redirect_url = f"https://www.googleapis.com/drive/v3/files/{file_id}?alt=media&acknowledgeAbuse=true&supportsAllDrives=true&access_token={token}"
             from fastapi.responses import RedirectResponse
             return RedirectResponse(url=redirect_url)
 
@@ -464,7 +465,7 @@ async def stream_file(request: Request, drive_id: str = None, file_id: str = Non
         if r.status_code >= 400:
             await r.aclose()
             await client.aclose()
-            return JSONResponse({"error": f"Google API returned {r.status_code}"}, status_code=r.status_code)
+            return JSONResponse({"error": f"Google API Error {r.status_code}"}, status_code=r.status_code, headers=CORS)
 
         async def gen():
             try:
@@ -472,30 +473,40 @@ async def stream_file(request: Request, drive_id: str = None, file_id: str = Non
                 async for chunk in r.aiter_bytes(chunk_size):
                     log_analytics_bytes(len(chunk))
                     if speed_limit and speed_limit > 0:
+                        # Speed limiting logic
                         await asyncio.sleep(len(chunk) / (speed_limit * 1024 * 1024))
                     yield chunk
             finally:
                 await r.aclose()
                 await client.aclose()
 
-        resp_h = {}
+        resp_h = {**CORS}
         resp_h["Accept-Ranges"] = "bytes"
         if "content-length" in r.headers:
             resp_h["Content-Length"] = str(r.headers["content-length"])
         if "content-range" in r.headers:
             resp_h["Content-Range"] = str(r.headers["content-range"])
-        resp_h["Content-Disposition"] = f'{"attachment" if is_dl else "inline"}; filename="{name}"'
+
+        # Proper encoding for filename to avoid issues with special characters
+        from urllib.parse import quote
+        encoded_name = quote(name)
+        resp_h["Content-Disposition"] = f'{"attachment" if is_dl else "inline"}; filename*=UTF-8\'\'{encoded_name}'
 
         return StreamingResponse(gen(), status_code=r.status_code, headers=resp_h, media_type=r.headers.get("content-type", "application/octet-stream"))
 
     except Exception as e:
-        return JSONResponse({"error": str(e)}, status_code=500)
+        print(f"[Stream] Error: {e}")
+        return JSONResponse({"error": str(e)}, status_code=500, headers=CORS)
 
 # ── FRONTEND ──────────────────────────────────────────────────────────────────
 @app.get("/", response_class=HTMLResponse)
 @app.get("/preview.html", response_class=HTMLResponse)
 async def index():
     return HTMLResponse(Path("preview.html").read_text(encoding="utf-8"))
+
+@app.options("/{rest:path}")
+async def options_handler():
+    return Response(headers={**CORS, "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS"})
 
 if __name__ == "__main__":
     uvicorn.run("app:app", host="0.0.0.0", port=7860, reload=False)
