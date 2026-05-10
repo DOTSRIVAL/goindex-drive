@@ -655,7 +655,8 @@ function switchTab(tabId, el) {
 // ── DRIVES API ───────────────────────────────────────────────────────
 async function fetchDrives() {
   try {
-    const r = await fetch(`${PROXY}/drives`);
+    const pass = localStorage.getItem('drive_pass') || '';
+    const r = await fetch(`${PROXY}/drives?admin_pass=${pass}`);
     drives = await r.json();
   } catch(e) { console.error("Failed to load drives", e); }
 }
@@ -743,11 +744,21 @@ async function deleteDrive(id) {
 // ── API HELPERS ──────────────────────────────────────────────────────
 async function apiGet(driveId, path, queryParams) {
   const params = new URLSearchParams(queryParams || {});
-  const url = `${PROXY}/api/${driveId}${path}${params.toString() ? '?' + params : ''}`;
+  // Use the new /list endpoint
+  let url = `${PROXY}/list?drive_id=${driveId}`;
+  if (path.includes('root')) {
+    url += `&folder_id=root`;
+  } else if (params.get('q')) {
+    // Extract folderId from query 'folderId' in parents
+    const q = params.get('q');
+    const match = q.match(/'([^']+)' in parents/);
+    if (match) url += `&folder_id=${match[1]}`;
+  }
+  
   const r = await fetch(url);
   if (!r.ok) {
     const d = await r.json().catch(()=>({}));
-    throw new Error((d.error && d.error.message) || r.statusText);
+    throw new Error(d.error || r.statusText);
   }
   return r.json();
 }
