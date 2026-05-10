@@ -33,13 +33,19 @@ if DB_URL:
                         drives_data text
                     )
                 """)
+                # Users table with display_name
                 cur.execute("""
                     CREATE TABLE IF NOT EXISTS drivebase_users (
                         username TEXT PRIMARY KEY,
                         password TEXT,
+                        display_name TEXT,
                         role TEXT
                     )
                 """)
+                # Migration: Add display_name if missing
+                try:
+                    cur.execute("ALTER TABLE drivebase_users ADD COLUMN IF NOT EXISTS display_name TEXT")
+                except: pass
                 postgres_conn.commit()
             print("Connected to PostgreSQL successfully.")
             
@@ -62,25 +68,25 @@ def load_users():
     try:
         if postgres_conn:
             with postgres_conn.cursor() as cur:
-                cur.execute("SELECT username, password, role FROM drivebase_users")
+                cur.execute("SELECT username, password, display_name, role FROM drivebase_users")
                 rows = cur.fetchall()
-                _users = {r[0]: {"password": r[1], "role": r[2]} for r in rows}
+                _users = {r[0]: {"password": r[1], "display_name": r[2], "role": r[3]} for r in rows}
         elif user_collection is not None:
             for doc in user_collection.find():
-                _users[doc["username"]] = {"password": doc["password"], "role": doc["role"]}
+                _users[doc["username"]] = {"password": doc["password"], "display_name": doc.get("display_name", doc["username"]), "role": doc["role"]}
     except: pass
 
 load_users()
 
-def save_user(username, password, role):
-    _users[username] = {"password": password, "role": role}
+def save_user(username, password, display_name, role):
+    _users[username] = {"password": password, "display_name": display_name, "role": role}
     try:
         if postgres_conn:
             with postgres_conn.cursor() as cur:
-                cur.execute("INSERT INTO drivebase_users (username, password, role) VALUES (%s, %s, %s) ON CONFLICT (username) DO UPDATE SET password=EXCLUDED.password, role=EXCLUDED.role", (username, password, role))
+                cur.execute("INSERT INTO drivebase_users (username, password, display_name, role) VALUES (%s, %s, %s, %s) ON CONFLICT (username) DO UPDATE SET password=EXCLUDED.password, display_name=EXCLUDED.display_name, role=EXCLUDED.role", (username, password, display_name, role))
             postgres_conn.commit()
         elif user_collection is not None:
-            user_collection.update_one({"username": username}, {"$set": {"password": password, "role": role}}, upsert=True)
+            user_collection.update_one({"username": username}, {"$set": {"password": password, "display_name": display_name, "role": role}}, upsert=True)
     except: pass
 
 def load_db_drives():
@@ -259,13 +265,21 @@ async def get_analytics():
 class LoginIn(BaseModel):
     username: str
     password: str
+    display_name: str = ""
 
 @app.post("/register")
 async def register(body: LoginIn):
     if body.username in _users:
         return JSONResponse({"error": "User already exists"}, status_code=400, headers=CORS)
-    save_user(body.username, body.password, "user")
+    save_user(body.username, body.password, body.display_name or body.username, "user")
     return JSONResponse({"message": "User registered successfully"}, headers=CORS)
+
+@app.get("/users")
+async def list_users(admin_pass: str = ""):
+    if admin_pass != ADMIN_PASS:
+        return JSONResponse({"error": "Unauthorized"}, status_code=403, headers=CORS)
+    user_list = [{"username": u, "display_name": d["display_name"], "role": d["role"]} for u, d in _users.items()]
+    return JSONResponse(user_list, headers=CORS)
 
 @app.post("/login")
 async def login(body: LoginIn):
