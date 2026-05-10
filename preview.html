@@ -744,23 +744,28 @@ async function deleteDrive(id) {
 // ── API HELPERS ──────────────────────────────────────────────────────
 async function apiGet(driveId, path, queryParams) {
   const params = new URLSearchParams(queryParams || {});
-  // Use the new /list endpoint
   let url = `${PROXY}/list?drive_id=${driveId}`;
-  if (path.includes('root')) {
-    url += `&folder_id=root`;
-  } else if (params.get('q')) {
-    // Extract folderId from query 'folderId' in parents
-    const q = params.get('q');
-    const match = q.match(/'([^']+)' in parents/);
-    if (match) url += `&folder_id=${match[1]}`;
-  }
   
-  const r = await fetch(url);
-  if (!r.ok) {
-    const d = await r.json().catch(()=>({}));
-    throw new Error(d.error || r.statusText);
+  if (path.includes('root') && !path.includes('files/root')) {
+     // This is the old root path, we should use folder_id=root
+     url += `&folder_id=root`;
+  } else {
+     // Check if we are listing a specific folder
+     const q = params.get('q');
+     if (q) {
+       const match = q.match(/'([^']+)' in parents/);
+       if (match) url += `&folder_id=${match[1]}`;
+     } else if (path.includes('files/root')) {
+       url += `&folder_id=root`;
+     }
   }
-  return r.json();
+
+  const r = await fetch(url);
+  const data = await r.json().catch(()=>({}));
+  if (!r.ok) {
+    throw new Error(data.error || r.statusText || "Request failed");
+  }
+  return data;
 }
 
 // ── UI RENDERING ─────────────────────────────────────────────────────
