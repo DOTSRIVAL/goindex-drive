@@ -1,4 +1,4 @@
-import os, time, json, httpx, secrets, hashlib, hmac, uuid
+import os, time, json, httpx, secrets, hashlib, hmac, uuid, asyncio
 from pathlib import Path
 from fastapi import FastAPI, Request, Response
 from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
@@ -348,7 +348,7 @@ async def stream_file(drive_id: str, file_id: str, request: Request, name: str =
         exp  = request.query_params.get("exp", "")
         if not sig or not exp:
             return JSONResponse({"error": "Link expired or invalid"}, status_code=403)
-        expected = hmac.new(_app_secret.encode(), f"{file_id}:{exp}".encode(), hashlib.sha256).hexdigest()
+        expected = hmac.HMAC(_app_secret.encode(), f"{file_id}:{exp}".encode(), hashlib.sha256).hexdigest()
         if not hmac.compare_digest(sig, expected):
             return JSONResponse({"error": "Invalid signature"}, status_code=403)
         if time.time() > float(exp):
@@ -382,7 +382,7 @@ async def stream_file(drive_id: str, file_id: str, request: Request, name: str =
                 async for chunk in r.aiter_bytes(chunk_size):
                     log_analytics_bytes(len(chunk))
                     if speed_limit and speed_limit > 0:
-                        await __import__("asyncio").sleep(len(chunk) / (speed_limit * 1024 * 1024))
+                        await asyncio.sleep(len(chunk) / (speed_limit * 1024 * 1024))
                     yield chunk
 
             resp_h = {**CORS}
