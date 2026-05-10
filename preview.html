@@ -728,7 +728,8 @@ function openEditForm(id) {
 async function deleteDrive(id) {
   if(!confirm('Remove this drive?')) return;
   try {
-    await fetch(`${PROXY}/drives/${id}`, {method: 'DELETE'});
+    const pass = localStorage.getItem('drive_pass') || '';
+    await fetch(`${PROXY}/drives/${id}?admin_pass=${pass}`, {method: 'DELETE'});
     await fetchDrives();
     renderSettingsDrives();
     if(currentDriveId === id) {
