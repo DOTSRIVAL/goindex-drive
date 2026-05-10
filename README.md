@@ -46,20 +46,6 @@ Drive Base PRO features a robust, multi-tier user management system:
 
 ---
 
-## 🔐 Authentication & User Roles
-
-Drive Base PRO now features a complete user management system:
-
-- **Admin Gateway:** Configure `ADMIN_USER` and `ADMIN_PASS` in Hugging Face Secrets. 
-  - *Example:* `ADMIN_USER = admin@gmail.com`, `ADMIN_PASS = admin123`.
-  - Only the Admin can see and access the **Settings (⚙️)** gear icon.
-- **Guest Access:** Users can click "Continue as Guest" to browse files without creating an account.
-- **Normal Users:** Users can Register and Login. Their data is saved, but the **Settings icon is Hidden** to prevent unauthorized drive changes.
-- **Database Persistence:** All user credentials (username/password) are securely stored in your connected **NeonDB (Postgres) or MongoDB**.
-- **Logout Feature:** A dedicated Logout button is available at the top to securely end your session.
-
----
-
 ## 📸 Screenshots
 
 <p align="center">
