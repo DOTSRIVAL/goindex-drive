@@ -31,7 +31,7 @@ if DB_URL:
     try:
         if "postgres" in DB_URL:
             import psycopg2
-            postgres_conn = psycopg2.connect(DB_URL)
+            postgres_conn = psycopg2.connect(DB_URL, connect_timeout=5)
             with postgres_conn.cursor() as cur:
                 cur.execute("""
                     CREATE TABLE IF NOT EXISTS drivebase_config (
