@@ -295,7 +295,9 @@ async def update_settings(body: SettingsIn, admin_pass: str = ""):
 
 # ── DRIVES ENDPOINTS ──────────────────────────────────────────────────────────
 @app.get("/drives")
-async def get_drives():
+async def get_drives(admin_pass: str = ""):
+    if admin_pass == ADMIN_PASS:
+        return JSONResponse(_drives, headers=CORS)
     return JSONResponse([{"id": d["id"], "name": d["name"]} for d in _drives], headers=CORS)
 
 class DriveIn(BaseModel):
