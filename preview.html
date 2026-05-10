@@ -283,9 +283,9 @@ input[type=range]:hover::-webkit-slider-thumb { transform: scale(1.2); }
       <div class="settings-tabs">
         <div class="settings-tab active" onclick="switchTab('tab-drives', this)">☁ Drives</div>
         <div class="settings-tab" onclick="switchTab('tab-speed', this)">⚡ Speed</div>
-        <div class="settings-tab" onclick="switchTab('tabAnalytics', this)">📊 Analytics</div>
-        <div class="settings-tab" onclick="switchTab('tabSecurity', this)">🔒 Link Security</div>
-        <div class="settings-tab" onclick="switchTab('tabUsers', this); fetchUsers()">👥 Users</div>
+        <div class="settings-tab" onclick="switchTab('tab-analytics', this)">📊 Analytics</div>
+        <div class="settings-tab" onclick="switchTab('tab-security', this)">🔒 Link Security</div>
+        <div class="settings-tab" onclick="switchTab('tab-users', this); fetchUsers()">👥 Users</div>
       </div>
       
       <!-- TAB: DRIVES -->
@@ -322,28 +322,13 @@ input[type=range]:hover::-webkit-slider-thumb { transform: scale(1.2); }
       
       <!-- TAB: SPEED -->
       <div id="tab-speed" class="settings-pane">
-        <div style="display:flex; flex-direction:column; gap:12px;">
-          <h3>Speed & Performance Controls</h3>
-          <p style="font-size:0.8rem; color:var(--text2);">Control the download and streaming proxy speeds globally.</p>
-          <div class="form-group">
-            <label>Proxy Chunk Size (MB)</label>
-            <input type="number" id="inChunkSize" placeholder="2" value="2" min="1" max="100">
-            <span style="font-size:0.7rem; color:var(--text2);">Larger chunks increase max speed but use more RAM. (Default: 2MB)</span>
-          </div>
-          <div class="form-group">
-            <label>Speed Limit (MB/s) - Traffic Control</label>
-            <input type="number" id="inSpeedLimit" placeholder="0" value="0" min="0" step="0.1">
-            <span style="font-size:0.7rem; color:var(--text2);">Set to 0 for Unlimited Speed.</span>
-          </div>
-          <div class="form-group" style="flex-direction:row; align-items:center; gap:8px;">
-            <input type="checkbox" id="inDirectMode" style="width:18px; height:18px; accent-color:var(--primary);">
-            <label for="inDirectMode" style="font-weight:bold;">Enable Direct Download (Max Speed)</label>
-          </div>
-          <p style="font-size:0.7rem; color:#ffb74d; margin-top:-6px;">Warning: Direct mode connects directly to Google Drive (like AList). This gives Maximum ISP Speed, but briefly exposes your temporary access token in the URL.</p>
-          <div>
-            <button class="btn btn-primary" onclick="saveGlobalSettings()">Apply Speed Settings</button>
-          </div>
+        <h3>Traffic & Speed Control</h3>
+        <p style="color:var(--text2); font-size:0.85rem; margin-bottom:16px;">Set global limits to protect your server bandwidth.</p>
+        <div class="form-group">
+          <label>Global Speed Limit (MB/s) - 0 for Unlimited</label>
+          <input type="number" step="0.1" id="inSpeedLimit" value="0">
         </div>
+        <button class="btn btn-primary" style="margin-top:20px; width:100%;" onclick="saveGlobalSettings()">Apply/Save Settings</button>
       </div>
       
       <!-- TAB: ANALYTICS -->
@@ -470,6 +455,7 @@ async function handleAuth() {
     } else {
       localStorage.setItem('drive_token', d.token);
       localStorage.setItem('drive_user', d.username);
+      localStorage.setItem('drive_display_name', d.display_name);
       localStorage.setItem('drive_role', d.role);
       if(d.role === 'admin') localStorage.setItem('drive_pass', p);
       completeLogin(d);
@@ -548,9 +534,10 @@ async function init() {
   const token = localStorage.getItem('drive_token');
   const role = localStorage.getItem('drive_role');
   const user = localStorage.getItem('drive_user');
+  const display_name = localStorage.getItem('drive_display_name');
   
   if(token && role) {
-    completeLogin({token, role, username: user});
+    completeLogin({token, role, username: user, display_name: display_name});
   } else {
     document.getElementById('authOverlay').style.display = 'flex';
   }
