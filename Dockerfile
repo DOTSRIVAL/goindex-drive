@@ -1,7 +1,13 @@
 FROM python:3.11-slim
 
+# Install system dependencies needed for psycopg2
+USER root
+RUN apt-get update && apt-get install -y \
+    gcc \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
 # Hugging Face Spaces runs as a non-root user (UID 1000)
-# We need to set this up so app.py has permissions to write to drives.json
 RUN useradd -m -u 1000 user
 USER user
 ENV HOME=/home/user \
@@ -9,7 +15,7 @@ ENV HOME=/home/user \
 
 WORKDIR $HOME/app
 
-# Install dependencies
+# Install Python dependencies
 COPY --chown=user requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
