@@ -118,14 +118,14 @@ def load_db_drives():
             with postgres_conn.cursor() as cur:
                 cur.execute("SELECT drives_data FROM drivebase_config WHERE id=1")
                 row = cur.fetchone()
-                if row and row[0]:
-                    return json.loads(row[0])
+                if row:
+                    return json.loads(row[0]) if row[0] else []
         elif mongo_col_drives is not None:
             doc = mongo_col_drives.find_one({"_id": "drives"})
-            if doc and "data" in doc:
-                return doc["data"]
+            if doc:
+                return doc.get("data", [])
     except Exception as e:
-        print("[Drives] Load failed:", e)
+        print(f"[DB] Error loading drives: {e}")
     return None
 
 def save_db_drives(drives_list):
@@ -138,10 +138,12 @@ def save_db_drives(drives_list):
                     (json.dumps(drives_list),)
                 )
             postgres_conn.commit()
+            print(f"[DB] Successfully saved {len(drives_list)} drives to Postgres")
         elif mongo_col_drives is not None:
             mongo_col_drives.update_one({"_id": "drives"}, {"$set": {"data": drives_list}}, upsert=True)
+            print(f"[DB] Successfully saved {len(drives_list)} drives to MongoDB")
     except Exception as e:
-        print("[Drives] Save failed:", e)
+        print(f"[DB] Error saving drives: {e}")
 
 def load_drives():
     global _drives
