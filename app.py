@@ -26,7 +26,7 @@ ADMIN_PASS    = os.environ.get("ADMIN_PASS", "admin123")
 _drives:      list[dict] = []
 _token_cache: dict       = {}
 _users:       dict       = {}  # {username: {password, display_name, role}}
-_app_settings = {"chunk_size_mb": 2, "speed_limit_mb": 0.0, "direct_download_mode": False, "link_expiry_hours": 0.0}
+_app_settings = {"chunk_size_mb": 2, "speed_limit_mb": 0.0, "link_expiry_hours": 0.0}
 _app_secret   = os.environ.get("APP_SECRET", str(uuid.uuid4()))
 _analytics:   dict       = {}
 
@@ -290,7 +290,6 @@ async def get_settings():
 class SettingsIn(BaseModel):
     chunk_size_mb: int = 2
     speed_limit_mb: float = 0.0
-    direct_download_mode: bool = False
     link_expiry_hours: float = 0.0
 
 @app.post("/settings")
@@ -299,7 +298,6 @@ async def update_settings(body: SettingsIn, admin_pass: str = ""):
         return JSONResponse({"error": "Unauthorized"}, status_code=403, headers=CORS)
     _app_settings["chunk_size_mb"]        = max(1, body.chunk_size_mb)
     _app_settings["speed_limit_mb"]       = max(0.0, body.speed_limit_mb)
-    _app_settings["direct_download_mode"] = body.direct_download_mode
     _app_settings["link_expiry_hours"]    = max(0.0, body.link_expiry_hours)
     return JSONResponse(_app_settings, headers=CORS)
 
@@ -444,19 +442,8 @@ async def stream_file(request: Request, drive_id: str = None, file_id: str = Non
         token = await get_token(drive_id)
         chunk_mb    = _app_settings.get("chunk_size_mb", 2)
         speed_limit = _app_settings.get("speed_limit_mb", 0)
-        direct_mode = _app_settings.get("direct_download_mode", False)
 
         range_header = request.headers.get("range", "")
-
-        if direct_mode:
-            # For direct mode, we use the download endpoint which is sometimes less likely to trigger bot detection than alt=media
-            # and we use a more standard redirect.
-            redirect_url = f"https://www.googleapis.com/drive/v3/files/{file_id}?alt=media&acknowledgeAbuse=true&supportsAllDrives=true&access_token={token}"
-            # Add a cache-busting or dummy param to potentially bypass some simple filters
-            redirect_url += f"&_t={int(time.time())}"
-
-            from fastapi.responses import RedirectResponse
-            return RedirectResponse(url=redirect_url)
 
         params = {"alt": "media", "acknowledgeAbuse": "true", "supportsAllDrives": "true"}
         req_headers = {"Authorization": f"Bearer {token}"}
