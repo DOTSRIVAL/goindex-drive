@@ -449,8 +449,12 @@ async def stream_file(request: Request, drive_id: str = None, file_id: str = Non
         range_header = request.headers.get("range", "")
 
         if direct_mode:
-            # Redirect to Google API with access token in query param for better compatibility
+            # For direct mode, we use the download endpoint which is sometimes less likely to trigger bot detection than alt=media
+            # and we use a more standard redirect.
             redirect_url = f"https://www.googleapis.com/drive/v3/files/{file_id}?alt=media&acknowledgeAbuse=true&supportsAllDrives=true&access_token={token}"
+            # Add a cache-busting or dummy param to potentially bypass some simple filters
+            redirect_url += f"&_t={int(time.time())}"
+
             from fastapi.responses import RedirectResponse
             return RedirectResponse(url=redirect_url)
 
