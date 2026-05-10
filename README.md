@@ -6,7 +6,7 @@
 </div>
 
 <p align="center">
-  <b><a href="https://dotsrival-drivebasepro.hf.space">🔥 Click Here for Live Demo Preview 🔥</a></b>
+  <b><a href="YOUR_HUGGINGFACE_SPACE_URL_HERE">🔥 Click Here for Live Demo Preview 🔥</a></b>
 </p>
 
 <hr>
@@ -25,6 +25,8 @@ It is specifically designed for **Anime/Movie websites, File Hosts, and heavy do
 - 📊 **Real-Time Analytics:** Built-in Live Traffic Monitor. Watch your data transfer (GBs) and Active Unique Users count tick up in real-time right from the Top Bar.
 - 🔒 **Secure Expiring Links:** Stop link-stealers in their tracks! Enable HMAC-signed Link Expiration. Generate links that automatically expire after X hours.
 - 🛑 **Global Traffic Controller:** Set a hard speed limit (e.g., 1.5 MB/s) per connection to save your server bandwidth and prevent abuse.
+- 🔒 **Multi-User System:** Built-in **Login & Register** system. Support for Admin, Registered Users, and Guest access.
+- ⚙️ **Admin Protection:** Hide your sensitive settings from the public. Only the Admin can see and modify Drive configurations.
 - 📱 **Pro UI Interface:** Modern, dark-mode, fully mobile-responsive interface with a tabbed Settings dashboard.
 - 🎬 **In-Browser Player:** Stream 1080p media natively inside the browser without downloading!
 
@@ -61,8 +63,14 @@ To ensure your connected Google Drives are never lost when Hugging Face restarts
 2. Scroll down to **Variables and secrets**.
 3. Click **New secret**.
    - **Name:** `DATABASE_URL`
+   - **Name:** `DATABASE_URL`
    - **Value:** *(Paste your NeonDB or MongoDB URL here)*
-4. Click Save. The Space will restart and connect to your database.
+4. **(Optional) Add Admin Credentials:**
+   - **Name:** `ADMIN_USER`
+   - **Value:** *(Your chosen admin username/email)*
+   - **Name:** `ADMIN_PASS`
+   - **Value:** *(Your chosen admin password)*
+5. Click Save. The Space will restart and connect to your database.
 
 ### Step 4: Add Your Google Drive
 1. Open your deployed Drive Base PRO website.
