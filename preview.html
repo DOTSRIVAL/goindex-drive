@@ -250,8 +250,10 @@ input[type=range]:hover::-webkit-slider-thumb { transform: scale(1.2); }
 
 
 /* CHECKBOX */
-.row-check { position: absolute; top: 12px; left: 12px; transform: scale(1.3); cursor: pointer; z-index: 10; accent-color: #000; }
+.row-check { position: absolute; top: 12px; left: 12px; transform: scale(1.3); cursor: pointer; z-index: 10; accent-color: #000; opacity: 0; pointer-events: none; transition: 0.2s; }
+.selection-mode .row-check { opacity: 1; pointer-events: auto; }
 .list-row.selected { background: rgba(144, 202, 249, 0.12) !important; border: 1px solid var(--primary) !important; }
+.list-row.selected .row-check { opacity: 1; }
 .list.grid .row-check { top: 10px; left: 10px; }
 
 /* FOOTER BAR */
@@ -559,6 +561,7 @@ let currentDriveId = null;
 let navStack = []; // [{id, name, isDriveRoot}]
 let allFiles = [];
 let selectedFiles = new Set();
+let isSelectionMode = false;
 let currentSort = 'name_asc';
 let isGridView = false;
 let isSearchMode = false;
@@ -907,8 +910,9 @@ function renderRootDrives() {
   renderBreadcrumb();
   document.getElementById('stats').innerHTML = `<span><strong>${drives.length}</strong> Drives connected</span>`;
 
+  const el = document.getElementById('list');
   if (drives.length === 0) {
-    document.getElementById('list').innerHTML = `
+    el.innerHTML = `
       <div class="state">
         <span class="material-icons" style="font-size:48px;color:var(--surface3)">cloud_off</span>
         <span>No drives added. Click Settings (⚙) to add your Google Drive.</span>
@@ -916,7 +920,10 @@ function renderRootDrives() {
     return;
   }
 
-  document.getElementById('list').innerHTML = drives.map((d, i) => `
+  if (isGridView) el.classList.add('grid');
+  else el.classList.remove('grid');
+
+  el.innerHTML = drives.map((d, i) => `
     <div class="list-row" onclick="openDriveRoot('${d.id}', '${d.name.replace(/'/g,"\\'")}')">
       <div class="name">
         <span class="material-icons" style="color:var(--primary)">cloud</span>
@@ -925,6 +932,8 @@ function renderRootDrives() {
       <div class="size">—</div>
       <div class="date">—</div>
     </div>
+  `).join('');
+}
   `).join('');
 }
 
@@ -994,7 +1003,9 @@ function toggleView() {
   const list = document.getElementById('list');
   if(isGridView) list.classList.add('grid');
   else list.classList.remove('grid');
-  sortAndRender();
+
+  if (currentDriveId) sortAndRender();
+  else renderRootDrives();
 }
 
 function onSortChange(val) {
@@ -1072,7 +1083,9 @@ function renderFiles(files) {
     return;
   }
 
-  // Filter Private Folders for Guests
+  if (isSelectionMode) el.classList.add('selection-mode');
+  else el.classList.remove('selection-mode');
+
   const role = localStorage.getItem('drive_role');
   const filtered = role === 'guest' ? files.filter(f => !f.name.includes('[PRIVATE]')) : files;
 
@@ -1082,7 +1095,13 @@ function renderFiles(files) {
     const isSelected = selectedFiles.has(f.id);
     const isPrivate = f.name.includes('[PRIVATE]');
 
-    return `<div class="list-row ${isSelected?'selected':''}" onclick="onItemClick(event, ${i})">
+    return `<div class="list-row ${isSelected?'selected':''}"
+                 onmousedown="startPress(event, ${i})"
+                 onmouseup="endPress(event, ${i})"
+                 onmouseleave="cancelPress()"
+                 ontouchstart="startPress(event, ${i})"
+                 ontouchend="endPress(event, ${i})"
+                 onclick="onItemClick(event, ${i})">
       <input type="checkbox" class="row-check" ${isSelected?'checked':''} onclick="toggleSelect(event, '${f.id}')">
       <div class="name">
         <span class="material-icons" style="color:${ic.color}">${isPrivate?'lock':ic.icon}</span>
@@ -1094,36 +1113,59 @@ function renderFiles(files) {
   }).join('');
 }
 
+let pressTimer;
+function startPress(e, i) {
+  if (isSelectionMode) return;
+  pressTimer = setTimeout(() => {
+    isSelectionMode = true;
+    toggleSelect(e, allFiles[i].id);
+    if (navigator.vibrate) navigator.vibrate(50);
+  }, 600);
+}
+function endPress(e, i) { clearTimeout(pressTimer); }
+function cancelPress() { clearTimeout(pressTimer); }
+
 function onItemClick(e, i) {
-  // If clicked on checkbox or its container, don't open panel
   if(e.target.classList.contains('row-check')) return;
-  onItem(i);
+  if(isSelectionMode) {
+    toggleSelect(e, allFiles[i].id);
+  } else {
+    onItem(i);
+  }
 }
 
 function toggleSelect(e, id) {
-  e.stopPropagation();
-  if(selectedFiles.has(id)) selectedFiles.delete(id);
-  else selectedFiles.add(id);
+  if(e) e.stopPropagation();
+  if(selectedFiles.has(id)) {
+    selectedFiles.delete(id);
+    if(selectedFiles.size === 0) isSelectionMode = false;
+  } else {
+    selectedFiles.add(id);
+    isSelectionMode = true;
+  }
   updateSelectionUI();
 }
 
 function updateSelectionUI() {
   const bar = document.getElementById('selectionBar');
   const count = document.getElementById('selCount');
+  const list = document.getElementById('list');
+
   if(selectedFiles.size > 0) {
     bar.classList.add('active');
     count.textContent = `${selectedFiles.size} items selected`;
+    list.classList.add('selection-mode');
   } else {
     bar.classList.remove('active');
+    list.classList.remove('selection-mode');
+    isSelectionMode = false;
   }
-
-  // Update existing rows visually without full re-render if possible,
-  // but for simplicity and correctness in this complex UI, we'll re-render
   sortAndRender();
 }
 
 function clearSelection() {
   selectedFiles.clear();
+  isSelectionMode = false;
   updateSelectionUI();
 }
 
