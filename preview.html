@@ -27,6 +27,26 @@ body { font-family: 'Roboto', sans-serif; background: var(--bg); color: var(--te
 .search-box .material-icons { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text2); font-size: 18px; }
 .search-box input { background: var(--surface2); border: 1px solid var(--divider); color: var(--text); padding: 8px 12px 8px 36px; border-radius: 6px; outline: none; width: 200px; transition: 0.2s; font-family: inherit; }
 .search-box input:focus { width: 260px; border-color: var(--primary); background: var(--surface3); }
+
+/* SEARCH DROPDOWN */
+.search-results-dropdown {
+  position: absolute; top: 100%; right: 0; width: 350px;
+  background: var(--surface); border: 1px solid var(--divider);
+  border-radius: 8px; margin-top: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  display: none; flex-direction: column; max-height: 400px; overflow-y: auto; z-index: 500;
+}
+.search-results-dropdown.active { display: flex; animation: fadeIn 0.2s ease; }
+.search-res-item {
+  display: flex; align-items: center; gap: 12px; padding: 12px;
+  cursor: pointer; border-bottom: 1px solid var(--divider); transition: 0.15s;
+}
+.search-res-item:hover { background: var(--surface2); }
+.search-res-item .material-icons { font-size: 20px; }
+.search-res-item .res-info { display: flex; flex-direction: column; gap: 2px; overflow: hidden; }
+.search-res-item .res-name { font-size: 0.85rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text); }
+.search-res-item .res-meta { font-size: 0.7rem; color: var(--text2); }
+.search-res-head { padding: 10px 12px; font-size: 0.75rem; color: var(--primary); font-weight: 700; border-bottom: 1px solid var(--divider); background: var(--surface2); display: flex; justify-content: space-between; align-items: center; }
+
 .settings-btn { background: var(--surface2); border: 1px solid var(--divider); color: var(--text); padding: 8px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; transition: 0.2s; }
 .settings-btn:hover { background: var(--surface3); }
 
@@ -332,6 +352,13 @@ input[type=range]:hover::-webkit-slider-thumb { transform: scale(1.2); }
     <div class="search-box" id="searchBoxWrap">
       <span class="material-icons" id="searchTrigger" onclick="toggleSearchMobile()">search</span>
       <input type="text" id="searchInput" placeholder="Search files..." oninput="onSearch(this.value)">
+      <div class="search-results-dropdown" id="searchDropdown">
+        <div class="search-res-head">
+          <span>GLOBAL SEARCH RESULTS</span>
+          <span class="material-icons" style="font-size:16px; cursor:pointer;" onclick="closeSearchDropdown()">close</span>
+        </div>
+        <div id="searchResList"></div>
+      </div>
     </div>
     <button class="settings-btn" id="settingsGear" style="display:none;" title="Settings" onclick="openSettings()"><span class="material-icons">settings</span></button>
     <button class="settings-btn" id="headerLogoutBtn" style="display:none; color:#ef5350;" title="Logout" onclick="handleLogout()"><span class="material-icons">logout</span></button>
@@ -699,10 +726,17 @@ async function initApp() {
 
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
-      closePanel(); closeSettings(); closePlayer();
+      closePanel(); closeSettings(); closePlayer(); closeSearchDropdown();
     }
     if (e.key === 'Enter' && document.activeElement.id === 'searchInput') {
       triggerGlobalSearch();
+    }
+  });
+
+  // Close search dropdown on click outside
+  document.addEventListener('click', (e) => {
+    if(!document.getElementById('searchBoxWrap').contains(e.target)) {
+      closeSearchDropdown();
     }
   });
 }
@@ -979,20 +1013,52 @@ async function triggerGlobalSearch() {
   const q = document.getElementById('searchInput').value.trim();
   if(!q || !currentDriveId) return;
 
-  isSearchMode = true;
-  showLoading(`Searching for "${q}" across drive...`);
+  const dropdown = document.getElementById('searchDropdown');
+  const list = document.getElementById('searchResList');
+
+  dropdown.classList.add('active');
+  list.innerHTML = '<div style="padding:20px; text-align:center; font-size:0.8rem; color:var(--text2);"><div class="spinner" style="width:20px; height:20px; margin:0 auto 10px;"></div>Searching drive...</div>';
+
   try {
     const r = await fetch(`${PROXY}/search?drive_id=${currentDriveId}&q=${encodeURIComponent(q)}`);
     const data = await r.json();
     if(data.error) throw new Error(data.error);
-    allFiles = data.files || [];
-    navStack = [{id: 'search', name: `Search: ${q}`}];
-    renderBreadcrumb();
-    clearSelection();
-    sortAndRender();
-    updateStats(allFiles);
+
+    const files = data.files || [];
+    if(files.length === 0) {
+      list.innerHTML = '<div style="padding:20px; text-align:center; color:var(--text2); font-size:0.8rem;">No global results found.</div>';
+      return;
+    }
+
+    list.innerHTML = files.map((f, i) => {
+      const ic = getIcon(f.mimeType);
+      return `
+        <div class="search-res-item" onclick='openSearchResult(${JSON.stringify(f).replace(/'/g, "&#39;")})'>
+          <span class="material-icons" style="color:${ic.color}">${ic.icon}</span>
+          <div class="res-info">
+            <div class="res-name">${f.name}</div>
+            <div class="res-meta">${f.mimeType === FOLDER_MIME ? 'Folder' : fmtSize(f.size)} • ${fmtDate(f.modifiedTime)}</div>
+          </div>
+        </div>
+      `;
+    }).join('');
   } catch(e) {
-    showError('Search failed: ' + e.message);
+    list.innerHTML = `<div style="padding:20px; text-align:center; color:#ef5350; font-size:0.8rem;">${e.message}</div>`;
+  }
+}
+
+function closeSearchDropdown() {
+  document.getElementById('searchDropdown').classList.remove('active');
+}
+
+function openSearchResult(f) {
+  closeSearchDropdown();
+  if(f.mimeType === FOLDER_MIME) {
+    navStack.push({id: f.id, name: f.name});
+    renderBreadcrumb();
+    listFolder(f.id);
+  } else {
+    openPanel(f, -1);
   }
 }
 
