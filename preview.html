@@ -27,26 +27,6 @@ body { font-family: 'Roboto', sans-serif; background: var(--bg); color: var(--te
 .search-box .material-icons { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text2); font-size: 18px; }
 .search-box input { background: var(--surface2); border: 1px solid var(--divider); color: var(--text); padding: 8px 12px 8px 36px; border-radius: 6px; outline: none; width: 200px; transition: 0.2s; font-family: inherit; }
 .search-box input:focus { width: 260px; border-color: var(--primary); background: var(--surface3); }
-
-/* SEARCH DROPDOWN */
-.search-results-dropdown {
-  position: absolute; top: 100%; right: 0; width: 350px;
-  background: var(--surface); border: 1px solid var(--divider);
-  border-radius: 8px; margin-top: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-  display: none; flex-direction: column; max-height: 400px; overflow-y: auto; z-index: 500;
-}
-.search-results-dropdown.active { display: flex; animation: fadeIn 0.2s ease; }
-.search-res-item {
-  display: flex; align-items: center; gap: 12px; padding: 12px;
-  cursor: pointer; border-bottom: 1px solid var(--divider); transition: 0.15s;
-}
-.search-res-item:hover { background: var(--surface2); }
-.search-res-item .material-icons { font-size: 20px; }
-.search-res-item .res-info { display: flex; flex-direction: column; gap: 2px; overflow: hidden; }
-.search-res-item .res-name { font-size: 0.85rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text); }
-.search-res-item .res-meta { font-size: 0.7rem; color: var(--text2); }
-.search-res-head { padding: 10px 12px; font-size: 0.75rem; color: var(--primary); font-weight: 700; border-bottom: 1px solid var(--divider); background: var(--surface2); display: flex; justify-content: space-between; align-items: center; }
-
 .settings-btn { background: var(--surface2); border: 1px solid var(--divider); color: var(--text); padding: 8px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; transition: 0.2s; }
 .settings-btn:hover { background: var(--surface3); }
 
@@ -177,15 +157,6 @@ body { font-family: 'Roboto', sans-serif; background: var(--bg); color: var(--te
   .name { gap: 10px; font-size: 0.85rem; }
   .name .material-icons { font-size: 20px; }
 
-  /* MOBILE GRID OPTIMIZATION */
-  .list.grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; padding: 8px; }
-  .list.grid .list-row { height: 160px; padding: 12px; border-radius: 10px; }
-  .list.grid .list-row .name span:nth-child(1) { font-size: 40px; }
-  .list.grid .list-row .name span:nth-child(2) { font-size: 0.75rem; }
-
-  .selection-bar { bottom: 60px; padding: 8px 16px; gap: 12px; font-size: 0.85rem; border-radius: 12px; }
-  .sel-btn { padding: 6px 12px; font-size: 0.75rem; border-radius: 8px; }
-
   .panel { width: 100%; border-radius: 20px 20px 0 0; height: 80vh; top: auto; bottom: 0; transform: translateY(100%); box-shadow: 0 -10px 30px rgba(0,0,0,0.6); }
   .panel.open { transform: translateY(0); }
   .panel-head { padding: 12px 16px; }
@@ -250,31 +221,6 @@ input[type=range]:hover::-webkit-slider-thumb { transform: scale(1.2); }
 .settings-pane { display: none; }
 .settings-pane.active { display: block; animation: fadeIn 0.2s ease; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-
-/* GRID VIEW */
-.list.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 16px; padding: 10px; }
-.list.grid .list-row { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 16px; background: var(--surface2); border: 1px solid var(--divider); height: 190px; position: relative; border-radius: 12px; transition: 0.2s; }
-.list.grid .list-row:hover { transform: translateY(-4px); background: var(--surface3); border-color: var(--primary); }
-.list.grid .list-row .name { flex-direction: column; gap: 8px; white-space: normal; height: 100%; justify-content: center; width: 100%; margin: 0; }
-.list.grid .list-row .name span:nth-child(1) { font-size: 52px; margin-bottom: 4px; }
-.list.grid .list-row .name span:nth-child(2) { font-size: 0.85rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.3; font-weight: 500; }
-.list.grid .list-row .size, .list.grid .list-row .date { display: none; }
-.list.grid .list-header { display: none; }
-
-/* SELECTION BAR */
-.selection-bar { position: fixed; bottom: 70px; left: 50%; transform: translateX(-50%) translateY(150px); opacity: 0; pointer-events: none; background: #90caf9; color: #000; padding: 10px 24px; border-radius: 100px; display: flex; align-items: center; gap: 20px; z-index: 250; transition: 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: 0 15px 35px rgba(0,0,0,0.7); font-weight: 700; width: max-content; max-width: 95vw; border: 2px solid rgba(255,255,255,0.2); }
-.selection-bar.active { transform: translateX(-50%) translateY(0); opacity: 1; pointer-events: auto; }
-.sel-btn { background: rgba(0,0,0,0.12); border: none; padding: 8px 18px; border-radius: 50px; cursor: pointer; font-weight: 800; font-size: 0.85rem; display: flex; align-items: center; gap: 8px; transition: 0.3s; color: #000; }
-.sel-btn:hover { background: rgba(0,0,0,0.2); transform: scale(1.05) translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
-.sel-btn:active { transform: scale(0.95); }
-
-
-/* CHECKBOX */
-.row-check { position: absolute; top: 12px; left: 12px; transform: scale(1.3); cursor: pointer; z-index: 10; accent-color: #000; opacity: 0; pointer-events: none; transition: 0.2s; }
-.selection-mode .row-check { opacity: 1; pointer-events: auto; }
-.list-row.selected { background: rgba(144, 202, 249, 0.12) !important; border: 1px solid var(--primary) !important; }
-.list-row.selected .row-check { opacity: 1; }
-.list.grid .row-check { top: 10px; left: 10px; }
 
 /* FOOTER BAR */
 .footer-bar { position: fixed; bottom: 0; left: 0; right: 0; background: var(--surface); border-top: 1px solid var(--divider); padding: 8px; text-align: center; font-size: 0.75rem; color: var(--text2); letter-spacing: 1.5px; z-index: 99; font-weight: 700; text-transform: uppercase; }
@@ -352,13 +298,6 @@ input[type=range]:hover::-webkit-slider-thumb { transform: scale(1.2); }
     <div class="search-box" id="searchBoxWrap">
       <span class="material-icons" id="searchTrigger" onclick="toggleSearchMobile()">search</span>
       <input type="text" id="searchInput" placeholder="Search files..." oninput="onSearch(this.value)">
-      <div class="search-results-dropdown" id="searchDropdown">
-        <div class="search-res-head">
-          <span>GLOBAL SEARCH RESULTS</span>
-          <span class="material-icons" style="font-size:16px; cursor:pointer;" onclick="closeSearchDropdown()">close</span>
-        </div>
-        <div id="searchResList"></div>
-      </div>
     </div>
     <button class="settings-btn" id="settingsGear" style="display:none;" title="Settings" onclick="openSettings()"><span class="material-icons">settings</span></button>
     <button class="settings-btn" id="headerLogoutBtn" style="display:none; color:#ef5350;" title="Logout" onclick="handleLogout()"><span class="material-icons">logout</span></button>
@@ -369,9 +308,7 @@ input[type=range]:hover::-webkit-slider-thumb { transform: scale(1.2); }
   <div class="toolbar">
     <div class="breadcrumb" id="breadcrumb"></div>
     <div class="toolbar-right">
-      <div style="display:flex; gap:10px; align-items:center;">
-        <button class="btn-icon" id="viewToggle" onclick="toggleView()" title="Toggle Grid/List View" style="background:var(--surface2); width:36px; height:36px;"><span class="material-icons">grid_view</span></button>
-        <div class="sort-box" title="Sort Files">
+      <div class="sort-box" title="Sort Files">
         <span class="material-icons" style="font-size: 16px; color: var(--text2);">sort</span>
         <select id="sortSelect" onchange="onSortChange(this.value)">
           <option value="name_asc">Name (1-9, A-Z)</option>
@@ -385,21 +322,11 @@ input[type=range]:hover::-webkit-slider-thumb { transform: scale(1.2); }
       <div class="stats" id="stats"></div>
     </div>
   </div>
-</div>
 
   <div class="list-header">
     <span>Name</span><span>Size</span><span>Modified</span>
   </div>
   <div class="list" id="list"></div>
-</div>
-
-<!-- SELECTION BAR -->
-<div class="selection-bar" id="selectionBar">
-  <span id="selCount">0 items selected</span>
-  <div style="display:flex; gap:12px;">
-    <button class="sel-btn" onclick="copySelectedLinks()"><span class="material-icons" style="font-size:20px;">content_copy</span> Copy Links</button>
-    <button class="sel-btn" onclick="clearSelection()" style="background:rgba(0,0,0,0.05);"><span class="material-icons" style="font-size:20px;">close</span></button>
-  </div>
 </div>
 
 <!-- FILE PANEL -->
@@ -587,11 +514,7 @@ let drives = [];
 let currentDriveId = null; 
 let navStack = []; // [{id, name, isDriveRoot}]
 let allFiles = [];
-let selectedFiles = new Set();
-let isSelectionMode = false;
 let currentSort = 'name_asc';
-let isGridView = false;
-let isSearchMode = false;
 
 // ── INIT ─────────────────────────────────────────────────────────────
 // ── AUTH LOGIC ────────────────────────────────────────────────────────
@@ -726,17 +649,7 @@ async function initApp() {
 
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
-      closePanel(); closeSettings(); closePlayer(); closeSearchDropdown();
-    }
-    if (e.key === 'Enter' && document.activeElement.id === 'searchInput') {
-      triggerGlobalSearch();
-    }
-  });
-
-  // Close search dropdown on click outside
-  document.addEventListener('click', (e) => {
-    if(!document.getElementById('searchBoxWrap').contains(e.target)) {
-      closeSearchDropdown();
+      closePanel(); closeSettings(); closePlayer();
     }
   });
 }
@@ -940,13 +853,11 @@ async function apiGet(driveId, path, queryParams) {
 function renderRootDrives() {
   currentDriveId = null;
   navStack = [];
-  clearSelection();
   renderBreadcrumb();
   document.getElementById('stats').innerHTML = `<span><strong>${drives.length}</strong> Drives connected</span>`;
 
-  const el = document.getElementById('list');
   if (drives.length === 0) {
-    el.innerHTML = `
+    document.getElementById('list').innerHTML = `
       <div class="state">
         <span class="material-icons" style="font-size:48px;color:var(--surface3)">cloud_off</span>
         <span>No drives added. Click Settings (⚙) to add your Google Drive.</span>
@@ -954,10 +865,7 @@ function renderRootDrives() {
     return;
   }
 
-  if (isGridView) el.classList.add('grid');
-  else el.classList.remove('grid');
-
-  el.innerHTML = drives.map((d, i) => `
+  document.getElementById('list').innerHTML = drives.map((d, i) => `
     <div class="list-row" onclick="openDriveRoot('${d.id}', '${d.name.replace(/'/g,"\\'")}')">
       <div class="name">
         <span class="material-icons" style="color:var(--primary)">cloud</span>
@@ -990,7 +898,6 @@ async function openDriveRoot(id, name) {
 }
 
 async function listFolder(folderId) {
-  isSearchMode = false;
   showLoading('Loading files…');
   try {
     const data = await apiGet(currentDriveId, '/drive/v3/files', {
@@ -999,77 +906,11 @@ async function listFolder(folderId) {
       fields: 'files(id,name,mimeType,size,modifiedTime)'
     });
     allFiles = data.files || [];
-    clearSelection();
     sortAndRender();
     updateStats(allFiles);
   } catch(e) {
     showError('Failed to list folder: ' + e.message);
   }
-}
-
-async function triggerGlobalSearch() {
-  const q = document.getElementById('searchInput').value.trim();
-  if(!q || !currentDriveId) return;
-
-  const dropdown = document.getElementById('searchDropdown');
-  const list = document.getElementById('searchResList');
-
-  dropdown.classList.add('active');
-  list.innerHTML = '<div style="padding:20px; text-align:center; font-size:0.8rem; color:var(--text2);"><div class="spinner" style="width:20px; height:20px; margin:0 auto 10px;"></div>Searching drive...</div>';
-
-  try {
-    const r = await fetch(`${PROXY}/search?drive_id=${currentDriveId}&q=${encodeURIComponent(q)}`);
-    const data = await r.json();
-    if(data.error) throw new Error(data.error);
-
-    const files = data.files || [];
-    if(files.length === 0) {
-      list.innerHTML = '<div style="padding:20px; text-align:center; color:var(--text2); font-size:0.8rem;">No global results found.</div>';
-      return;
-    }
-
-    list.innerHTML = files.map((f, i) => {
-      const ic = getIcon(f.mimeType);
-      return `
-        <div class="search-res-item" onclick='openSearchResult(${JSON.stringify(f).replace(/'/g, "&#39;")})'>
-          <span class="material-icons" style="color:${ic.color}">${ic.icon}</span>
-          <div class="res-info">
-            <div class="res-name">${f.name}</div>
-            <div class="res-meta">${f.mimeType === FOLDER_MIME ? 'Folder' : fmtSize(f.size)} • ${fmtDate(f.modifiedTime)}</div>
-          </div>
-        </div>
-      `;
-    }).join('');
-  } catch(e) {
-    list.innerHTML = `<div style="padding:20px; text-align:center; color:#ef5350; font-size:0.8rem;">${e.message}</div>`;
-  }
-}
-
-function closeSearchDropdown() {
-  document.getElementById('searchDropdown').classList.remove('active');
-}
-
-function openSearchResult(f) {
-  closeSearchDropdown();
-  if(f.mimeType === FOLDER_MIME) {
-    navStack.push({id: f.id, name: f.name});
-    renderBreadcrumb();
-    listFolder(f.id);
-  } else {
-    openPanel(f, -1);
-  }
-}
-
-function toggleView() {
-  isGridView = !isGridView;
-  const btn = document.getElementById('viewToggle').querySelector('.material-icons');
-  btn.textContent = isGridView ? 'view_list' : 'grid_view';
-  const list = document.getElementById('list');
-  if(isGridView) list.classList.add('grid');
-  else list.classList.remove('grid');
-
-  if (currentDriveId) sortAndRender();
-  else renderRootDrives();
 }
 
 function onSortChange(val) {
@@ -1143,112 +984,21 @@ function fmtDate(iso) {
 function renderFiles(files) {
   const el = document.getElementById('list');
   if (!files.length) {
-    el.innerHTML = `<div class="state"><span class="material-icons" style="font-size:48px;color:var(--surface3)">${isSearchMode?'search_off':'folder_open'}</span><span>${isSearchMode?'No results found':'Folder is empty'}</span></div>`;
+    el.innerHTML = '<div class="state"><span class="material-icons" style="font-size:48px;color:var(--surface3)">folder_open</span><span>Folder is empty</span></div>';
     return;
   }
-
-  if (isSelectionMode) el.classList.add('selection-mode');
-  else el.classList.remove('selection-mode');
-
-  const role = localStorage.getItem('drive_role');
-  const filtered = role === 'guest' ? files.filter(f => !f.name.includes('[PRIVATE]')) : files;
-
-  el.innerHTML = filtered.map((f,i) => {
+  el.innerHTML = files.map((f,i) => {
     const ic = getIcon(f.mimeType);
     const isFolder = f.mimeType === FOLDER_MIME;
-    const isSelected = selectedFiles.has(f.id);
-    const isPrivate = f.name.includes('[PRIVATE]');
-
-    return `<div class="list-row ${isSelected?'selected':''}"
-                 onmousedown="startPress(event, ${i})"
-                 onmouseup="endPress(event, ${i})"
-                 onmouseleave="cancelPress()"
-                 ontouchstart="startPress(event, ${i})"
-                 ontouchend="endPress(event, ${i})"
-                 onclick="onItemClick(event, ${i})">
-      <input type="checkbox" class="row-check" ${isSelected?'checked':''} onclick="toggleSelect(event, '${f.id}')">
+    return `<div class="list-row" onclick="onItem(${i})">
       <div class="name">
-        <span class="material-icons" style="color:${ic.color}">${isPrivate?'lock':ic.icon}</span>
-        <span title="${f.name}">${f.name.replace('[PRIVATE]', '')}</span>
+        <span class="material-icons" style="color:${ic.color}">${ic.icon}</span>
+        <span title="${f.name}">${f.name}</span>
       </div>
       <div class="size">${isFolder?'—':fmtSize(f.size)}</div>
       <div class="date">${fmtDate(f.modifiedTime)}</div>
     </div>`;
   }).join('');
-}
-
-let pressTimer;
-function startPress(e, i) {
-  if (isSelectionMode) return;
-  pressTimer = setTimeout(() => {
-    isSelectionMode = true;
-    toggleSelect(e, allFiles[i].id);
-    if (navigator.vibrate) navigator.vibrate(50);
-  }, 600);
-}
-function endPress(e, i) { clearTimeout(pressTimer); }
-function cancelPress() { clearTimeout(pressTimer); }
-
-function onItemClick(e, i) {
-  if(e.target.classList.contains('row-check')) return;
-  if(isSelectionMode) {
-    toggleSelect(e, allFiles[i].id);
-  } else {
-    onItem(i);
-  }
-}
-
-function toggleSelect(e, id) {
-  if(e) e.stopPropagation();
-  if(selectedFiles.has(id)) {
-    selectedFiles.delete(id);
-    if(selectedFiles.size === 0) isSelectionMode = false;
-  } else {
-    selectedFiles.add(id);
-    isSelectionMode = true;
-  }
-  updateSelectionUI();
-}
-
-function updateSelectionUI() {
-  const bar = document.getElementById('selectionBar');
-  const count = document.getElementById('selCount');
-  const list = document.getElementById('list');
-
-  if(selectedFiles.size > 0) {
-    bar.classList.add('active');
-    count.textContent = `${selectedFiles.size} items selected`;
-    list.classList.add('selection-mode');
-  } else {
-    bar.classList.remove('active');
-    list.classList.remove('selection-mode');
-    isSelectionMode = false;
-  }
-  sortAndRender();
-}
-
-function clearSelection() {
-  selectedFiles.clear();
-  isSelectionMode = false;
-  updateSelectionUI();
-}
-
-async function copySelectedLinks() {
-  let text = "";
-  for(let id of selectedFiles) {
-    const f = allFiles.find(file => file.id === id);
-    if(f && f.mimeType !== FOLDER_MIME) {
-      const url = `${window.location.origin}${PROXY}/stream?drive_id=${currentDriveId}&id=${f.id}&name=${encodeURIComponent(f.name)}`;
-      text += `${url}\n`;
-    }
-  }
-  if(text) {
-    await navigator.clipboard.writeText(text);
-    alert("Copied all selected links to clipboard!");
-    clearSelection();
-  } else {
-    alert("No streamable files selected.");
-  }
 }
 
 function updateStats(files) {
@@ -1289,84 +1039,60 @@ function navTo(i) {
 }
 
 async function openPanel(f, index) {
-  const isFolder = f.mimeType === FOLDER_MIME;
-  const isMedia   = f.mimeType && (f.mimeType.startsWith('video/') || f.mimeType.startsWith('audio/'));
-  const role = localStorage.getItem('drive_role');
+  let streamUrl = `${PROXY}/stream?drive_id=${currentDriveId}&id=${f.id}&name=${encodeURIComponent(f.name)}`;
+  let dlUrl     = `${PROXY}/download?drive_id=${currentDriveId}&id=${f.id}&name=${encodeURIComponent(f.name)}`;
 
-  let content = `
+  // Fetch signature if expiry is active
+  try {
+    const r = await fetch(`${PROXY}/sign?drive_id=${currentDriveId}&id=${f.id}`);
+    const sigData = await r.json();
+    if(sigData.exp > 0) {
+      streamUrl += `&exp=${sigData.exp}&sig=${sigData.sig}`;
+      dlUrl     += `&exp=${sigData.exp}&sig=${sigData.sig}`;
+    }
+  } catch(e) { console.error("Could not sign link"); }
+
+  const isMedia   = f.mimeType && (f.mimeType.startsWith('video/') || f.mimeType.startsWith('audio/'));
+  const absoluteStreamUrl = window.location.origin + streamUrl;
+  const absoluteDlUrl     = window.location.origin + dlUrl;
+
+  // Store URLs for the play function to use
+  f.tempStreamUrl = streamUrl;
+
+  document.getElementById('panelTitle').textContent = f.name;
+  document.getElementById('panelBody').innerHTML = `
     <div class="panel-meta">
-      <span class="lbl">Size</span><span class="val">${isFolder?'—':fmtSize(f.size)}</span>
+      <span class="lbl">Size</span><span class="val">${fmtSize(f.size)}</span>
       <span class="lbl">Modified</span><span class="val">${fmtDate(f.modifiedTime)}</span>
       <span class="lbl">Type</span><span class="val">${f.mimeType||'—'}</span>
-    </div>`;
-
-  if(isFolder) {
-    if(role === 'admin') {
-      const isPrivate = f.name.includes('[PRIVATE]');
-      content += `
-        <div style="margin-top:20px; background:var(--surface2); padding:12px; border-radius:8px; border:1px solid var(--divider);">
-          <div style="display:flex; justify-content:space-between; align-items:center;">
-            <span style="font-size:0.85rem; font-weight:500;">Private Folder</span>
-            <span class="material-icons" style="color:${isPrivate?'var(--primary)':'var(--text2)'}; cursor:pointer;" onclick="toggleFolderPrivacy('${f.id}', '${f.name}', ${isPrivate})">${isPrivate?'lock':'lock_open'}</span>
-          </div>
-          <p style="font-size:0.7rem; color:var(--text2); margin-top:6px;">* Hidden from Guest users if enabled.</p>
-        </div>
-      `;
-    }
-    content += `<button class="action-btn stream-btn" style="margin-top:16px;" onclick="onItem(${index})"><span class="material-icons">folder_open</span>Open Folder</button>`;
-  } else {
-    let streamUrl = `${PROXY}/stream?drive_id=${currentDriveId}&id=${f.id}&name=${encodeURIComponent(f.name)}`;
-    let dlUrl     = `${PROXY}/download?drive_id=${currentDriveId}&id=${f.id}&name=${encodeURIComponent(f.name)}`;
-
-    try {
-      const r = await fetch(`${PROXY}/sign?drive_id=${currentDriveId}&id=${f.id}`);
-      const sigData = await r.json();
-      if(sigData.exp > 0) {
-        streamUrl += `&exp=${sigData.exp}&sig=${sigData.sig}`;
-        dlUrl     += `&exp=${sigData.exp}&sig=${sigData.sig}`;
-      }
-    } catch(e) { console.error("Could not sign link"); }
-
-    const absoluteStreamUrl = window.location.origin + streamUrl;
-    const absoluteDlUrl     = window.location.origin + dlUrl;
-    f.tempStreamUrl = streamUrl;
-
-    content += `
-      <div class="action-btns">
-        ${isMedia
-          ? `<button class="action-btn stream-btn" onclick="playFromIndex(${index})"><span class="material-icons">play_circle</span>Stream / Play</button>`
-          : `<button class="action-btn stream-btn" onclick="window.open('${streamUrl}','_blank')"><span class="material-icons">open_in_new</span>Open / Stream</button>`}
-        <a href="${dlUrl}" download="${f.name}" class="action-btn dl-btn"><span class="material-icons">download</span>Download</a>
-        ${isMedia ? `
-          <button class="action-btn drive-btn" onclick="openMXPlayer('${absoluteStreamUrl}', '${f.name}')" style="background:#2196f3; color:#fff;"><span class="material-icons">play_arrow</span>MX Player</button>
-          <button class="action-btn drive-btn" onclick="openVLCPlayer('${absoluteStreamUrl}')" style="background:#ff9800; color:#fff;"><span class="material-icons">play_circle_outline</span>VLC Player</button>
-        ` : ''}
+    </div>
+    <div class="action-btns">
+      ${isMedia
+        ? `<button class="action-btn stream-btn" onclick="playFromIndex(${index})"><span class="material-icons">play_circle</span>Stream / Play</button>`
+        : `<button class="action-btn stream-btn" onclick="window.open('${streamUrl}','_blank')"><span class="material-icons">open_in_new</span>Open / Stream</button>`}
+      <a href="${dlUrl}" download="${f.name}" class="action-btn dl-btn"><span class="material-icons">download</span>Download</a>
+      ${isMedia ? `
+        <button class="action-btn drive-btn" onclick="openMXPlayer('${absoluteStreamUrl}', '${f.name}')" style="background:#2196f3; color:#fff;"><span class="material-icons">play_arrow</span>MX Player</button>
+        <button class="action-btn drive-btn" onclick="openVLCPlayer('${absoluteStreamUrl}')" style="background:#ff9800; color:#fff;"><span class="material-icons">play_circle_outline</span>VLC Player</button>
+      ` : ''}
+    </div>
+    <div class="link-block">
+      <div class="link-block-head stream"><span class="material-icons">stream</span>Streamable / Direct Link</div>
+      <div class="link-box">
+        <div class="link-url" id="streamUrlBox">${absoluteStreamUrl}</div>
+        <button class="copy-btn" onclick="copyLink('streamUrlBox',this)"><span class="material-icons">content_copy</span>Copy</button>
       </div>
-      <div class="link-block">
-        <div class="link-block-head stream"><span class="material-icons">stream</span>Streamable / Direct Link</div>
-        <div class="link-box">
-          <div class="link-url" id="streamUrlBox">${absoluteStreamUrl}</div>
-          <button class="copy-btn" onclick="copyLink('streamUrlBox',this)"><span class="material-icons">content_copy</span>Copy</button>
-        </div>
+    </div>
+    <div class="link-block">
+      <div class="link-block-head download"><span class="material-icons">download</span>Direct Download Link</div>
+      <div class="link-box">
+        <div class="link-url" id="dlUrlBox">${absoluteDlUrl}</div>
+        <button class="copy-btn" onclick="copyLink('dlUrlBox',this)"><span class="material-icons">content_copy</span>Copy</button>
       </div>
-      <div class="link-block">
-        <div class="link-block-head download"><span class="material-icons">download</span>Direct Download Link</div>
-        <div class="link-box">
-          <div class="link-url" id="dlUrlBox">${absoluteDlUrl}</div>
-          <button class="copy-btn" onclick="copyLink('dlUrlBox',this)"><span class="material-icons">content_copy</span>Copy</button>
-        </div>
-      </div>
-    `;
-  }
-
-  document.getElementById('panelTitle').textContent = f.name.replace('[PRIVATE]', '');
-  document.getElementById('panelBody').innerHTML = content;
+    </div>
+  `;
   document.getElementById('panelOverlay').classList.add('open');
   document.getElementById('filePanel').classList.add('open');
-}
-
-async function toggleFolderPrivacy(id, name, wasPrivate) {
-  alert("Privacy logic: In a real environment, this would rename the folder on Google Drive adding '[PRIVATE]' tag. For now, guests will not see folders with that tag.");
 }
 
 function playFromIndex(index) {
