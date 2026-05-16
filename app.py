@@ -101,15 +101,24 @@ def save_user(username: str, password: str, display_name: str, role: str):
     _users[username] = {"password": password, "display_name": display_name, "role": role}
     try:
         if postgres_conn:
-            with postgres_conn.cursor() as cur:
-                cur.execute(
-                    "INSERT INTO drivebase_users (username, password, display_name, role) "
-                    "VALUES (%s, %s, %s, %s) "
-                    "ON CONFLICT (username) DO UPDATE SET "
-                    "password=EXCLUDED.password, display_name=EXCLUDED.display_name, role=EXCLUDED.role",
-                    (username, password, display_name, role)
-                )
+            try:
+                cur = postgres_conn.cursor()
+                cur.execute("SELECT 1")
+            except Exception:
+                global postgres_conn
+                import psycopg2
+                postgres_conn = psycopg2.connect(DB_URL)
+                cur = postgres_conn.cursor()
+                
+            cur.execute(
+                "INSERT INTO drivebase_users (username, password, display_name, role) "
+                "VALUES (%s, %s, %s, %s) "
+                "ON CONFLICT (username) DO UPDATE SET "
+                "password=EXCLUDED.password, display_name=EXCLUDED.display_name, role=EXCLUDED.role",
+                (username, password, display_name, role)
+            )
             postgres_conn.commit()
+            cur.close()
         elif mongo_col_users is not None:
             mongo_col_users.update_one(
                 {"username": username},
@@ -157,13 +166,22 @@ def load_db_settings():
 def save_db_settings(settings_dict):
     try:
         if postgres_conn:
-            with postgres_conn.cursor() as cur:
-                cur.execute(
-                    "INSERT INTO drivebase_config (id, drives_data) VALUES (2, %s) "
-                    "ON CONFLICT (id) DO UPDATE SET drives_data = EXCLUDED.drives_data",
-                    (json.dumps(settings_dict),)
-                )
+            try:
+                cur = postgres_conn.cursor()
+                cur.execute("SELECT 1")
+            except Exception:
+                global postgres_conn
+                import psycopg2
+                postgres_conn = psycopg2.connect(DB_URL)
+                cur = postgres_conn.cursor()
+            
+            cur.execute(
+                "INSERT INTO drivebase_config (id, drives_data) VALUES (2, %s) "
+                "ON CONFLICT (id) DO UPDATE SET drives_data = EXCLUDED.drives_data",
+                (json.dumps(settings_dict),)
+            )
             postgres_conn.commit()
+            cur.close()
         elif mongo_col_drives is not None:
             mongo_col_drives.update_one({"_id": "settings"}, {"$set": {"data": settings_dict}}, upsert=True)
     except Exception as e:
@@ -172,13 +190,22 @@ def save_db_settings(settings_dict):
 def save_db_drives(drives_list):
     try:
         if postgres_conn:
-            with postgres_conn.cursor() as cur:
-                cur.execute(
-                    "INSERT INTO drivebase_config (id, drives_data) VALUES (1, %s) "
-                    "ON CONFLICT (id) DO UPDATE SET drives_data = EXCLUDED.drives_data",
-                    (json.dumps(drives_list),)
-                )
+            try:
+                cur = postgres_conn.cursor()
+                cur.execute("SELECT 1")
+            except Exception:
+                global postgres_conn
+                import psycopg2
+                postgres_conn = psycopg2.connect(DB_URL)
+                cur = postgres_conn.cursor()
+                
+            cur.execute(
+                "INSERT INTO drivebase_config (id, drives_data) VALUES (1, %s) "
+                "ON CONFLICT (id) DO UPDATE SET drives_data = EXCLUDED.drives_data",
+                (json.dumps(drives_list),)
+            )
             postgres_conn.commit()
+            cur.close()
             print(f"[DB] Successfully saved {len(drives_list)} drives to Postgres")
         elif mongo_col_drives is not None:
             mongo_col_drives.update_one({"_id": "drives"}, {"$set": {"data": drives_list}}, upsert=True)
