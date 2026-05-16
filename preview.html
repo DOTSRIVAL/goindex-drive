@@ -373,29 +373,34 @@ input[type=range]:hover::-webkit-slider-thumb { transform: scale(1.2); }
             <input type="text" id="inName" placeholder="My Drive">
           </div>
           <div class="form-group">
-            <label>Client ID <span style="font-size:0.7rem;color:var(--text2)">(Auto-filled from OAuth App)</span></label>
-            <input type="text" id="inClientId" placeholder="Loading from settings..." readonly style="color:var(--text2);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+              <label style="margin:0">Client ID</label>
+              <button class="btn" style="padding:2px 10px; font-size:0.72rem; background:var(--primary); color:#fff; border-radius:4px;" onclick="fillFromOAuth()">&#x1F511; Fill from OAuth App</button>
+            </div>
+            <input type="text" id="inClientId" placeholder="xxx.apps.googleusercontent.com">
           </div>
           <div class="form-group">
-            <label>Client Secret <span style="font-size:0.7rem;color:var(--text2)">(Auto-filled from OAuth App)</span></label>
-            <input type="password" id="inClientSecret" placeholder="Loading from settings..." readonly style="color:var(--text2);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+              <label style="margin:0">Client Secret</label>
+            </div>
+            <input type="password" id="inClientSecret" placeholder="GOCSPX-...">
           </div>
           <div class="form-group">
-            <label>Refresh Token <span style="font-size:0.7rem;color:var(--text2)">(Auto-filled after Sign-in)</span></label>
-            <input type="text" id="inRefreshToken" placeholder="Click Sign in below to get this automatically">
+            <label>Refresh Token <span style="font-size:0.7rem;color:var(--text2)">(Auto-filled after Sign-in, or enter manually)</span></label>
+            <input type="text" id="inRefreshToken" placeholder="Click Sign in below or enter manually">
           </div>
           <div class="form-group">
             <label>Root Folder ID (Optional)</label>
             <input type="text" id="inRootId" placeholder="root">
           </div>
           <div style="font-size:0.8rem; color:var(--text2); background:rgba(255,255,255,0.05); padding:8px; border-radius:4px; margin-top:4px;">
-            <b>Easy Google Sign-In:</b> Click below to login with Google and automatically get your Refresh Token. The Global OAuth Client ID and Secret from your <b>🔑 OAuth App</b> tab are used automatically.
+            <b>Tip:</b> Click <b>&#x1F511; Fill from OAuth App</b> to auto-fill your global Client ID & Secret. Then click <b>Sign in</b> to get the Refresh Token via Google login.
           </div>
-          <div style="display:flex; gap:10px; margin-top:8px;">
+          <div style="display:flex; gap:10px; margin-top:8px; flex-wrap:wrap;">
             <button class="btn" style="background:#fff; color:#000; font-weight:bold;" onclick="oauthSignIn(event)">
-               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8c-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4C12.955 4 4 12.955 4 24s8.955 20 20 20s20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"/><path fill="#FF3D00" d="m6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4C16.318 4 9.656 8.337 6.306 14.691z"/><path fill="#4CAF50" d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238A11.91 11.91 0 0 1 24 36c-5.222 0-9.649-3.342-11.123-7.828l-6.56 4.814C9.656 39.663 16.318 44 24 44z"/><path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303a12.04 12.04 0 0 1-4.087 5.571l.003-.002l6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z"/></svg> Sign in
+               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8c-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4C12.955 4 4 12.955 4 24s8.955 20 20 20s20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"/><path fill="#FF3D00" d="m6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4C16.318 4 9.656 8.337 6.306 14.691z"/><path fill="#4CAF50" d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238A11.91 11.91 0 0 1 24 36c-5.222 0-9.649-3.342-11.123-7.828l-6.56 4.814C9.656 39.663 16.318 44 24 44z"/><path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303a12.04 12.04 0 0 1-4.087 5.571l.003-.002l6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z"/></svg> Sign in with Google
             </button>
-            <button id="saveDriveBtn" class="btn btn-primary" onclick="saveNewDrive()">Save manually</button>
+            <button id="saveDriveBtn" class="btn btn-primary" onclick="saveNewDrive()">Save Drive</button>
             <button class="btn" style="background:var(--surface3)" onclick="toggleAddForm()">Cancel</button>
           </div>
         </div>
@@ -831,14 +836,22 @@ function resetAddForm() {
   editingDriveId = null;
   document.getElementById('formHeader').textContent = 'Add New Google Drive';
   document.getElementById('inName').value = '';
+  document.getElementById('inClientId').value = '';
+  document.getElementById('inClientSecret').value = '';
   document.getElementById('inRefreshToken').value = '';
   document.getElementById('inRootId').value = 'root';
   document.getElementById('saveDriveBtn').textContent = 'Save Drive';
-  // Auto-fill client ID and secret from global settings
-  const cid = document.getElementById('inGlobalClientId');
-  const csec = document.getElementById('inGlobalClientSecret');
-  if(cid && document.getElementById('inClientId')) document.getElementById('inClientId').value = cid.value;
-  if(csec && document.getElementById('inClientSecret')) document.getElementById('inClientSecret').value = csec.value;
+}
+
+function fillFromOAuth() {
+  const cid = document.getElementById('inGlobalClientId').value.trim();
+  const csec = document.getElementById('inGlobalClientSecret').value.trim();
+  if(!cid || !csec) {
+    alert('No Global OAuth credentials found!\nGo to the \u{1F511} OAuth App tab first and save your Client ID and Secret.');
+    return;
+  }
+  document.getElementById('inClientId').value = cid;
+  document.getElementById('inClientSecret').value = csec;
 }
 
 function openEditForm(id) {
@@ -849,9 +862,10 @@ function openEditForm(id) {
   document.getElementById('addDriveForm').classList.add('open');
   document.getElementById('formHeader').textContent = 'Edit Google Drive';
   document.getElementById('inName').value = drive.name || '';
+  document.getElementById('inClientId').value = drive.client_id || '';
+  document.getElementById('inClientSecret').value = drive.client_secret || '';
   document.getElementById('inRefreshToken').value = drive.refresh_token || '';
   document.getElementById('inRootId').value = drive.root_id || 'root';
-
   document.getElementById('saveDriveBtn').textContent = 'Update Drive';
 }
 
@@ -1457,6 +1471,12 @@ function toggleAddForm() {
 
 function oauthSignIn(e) {
   e.preventDefault();
+  
+  const clientId = document.getElementById('inClientId').value.trim();
+  if(!clientId) {
+    alert('Client ID is empty!\nClick the \ud83d\udd11 Fill from OAuth App button first to fill in your credentials.');
+    return;
+  }
   
   const redirectUri = window.location.origin + "/preview.html";
   fetch(`${PROXY}/oauth/url?redirect_uri=${encodeURIComponent(redirectUri)}`)
