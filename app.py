@@ -98,6 +98,7 @@ def load_users():
         print("[Users] Load failed:", e)
 
 def save_user(username: str, password: str, display_name: str, role: str):
+    global postgres_conn
     _users[username] = {"password": password, "display_name": display_name, "role": role}
     try:
         if postgres_conn:
@@ -105,7 +106,6 @@ def save_user(username: str, password: str, display_name: str, role: str):
                 cur = postgres_conn.cursor()
                 cur.execute("SELECT 1")
             except Exception:
-                global postgres_conn
                 import psycopg2
                 postgres_conn = psycopg2.connect(DB_URL)
                 cur = postgres_conn.cursor()
@@ -164,13 +164,13 @@ def load_db_settings():
     return {}
 
 def save_db_settings(settings_dict):
+    global postgres_conn
     try:
         if postgres_conn:
             try:
                 cur = postgres_conn.cursor()
                 cur.execute("SELECT 1")
             except Exception:
-                global postgres_conn
                 import psycopg2
                 postgres_conn = psycopg2.connect(DB_URL)
                 cur = postgres_conn.cursor()
@@ -188,13 +188,13 @@ def save_db_settings(settings_dict):
         print(f"[DB] Error saving settings: {e}")
 
 def save_db_drives(drives_list):
+    global postgres_conn
     try:
         if postgres_conn:
             try:
                 cur = postgres_conn.cursor()
                 cur.execute("SELECT 1")
             except Exception:
-                global postgres_conn
                 import psycopg2
                 postgres_conn = psycopg2.connect(DB_URL)
                 cur = postgres_conn.cursor()
