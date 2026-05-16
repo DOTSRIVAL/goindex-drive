@@ -373,15 +373,23 @@ input[type=range]:hover::-webkit-slider-thumb { transform: scale(1.2); }
             <input type="text" id="inName" placeholder="My Drive">
           </div>
           <div class="form-group">
-            <label>Refresh Token <span style="font-size:0.7rem;color:var(--text2)">(Optional if using Sign-in below)</span></label>
-            <input type="text" id="inRefreshToken" placeholder="1//0g...">
+            <label>Client ID <span style="font-size:0.7rem;color:var(--text2)">(Auto-filled from OAuth App)</span></label>
+            <input type="text" id="inClientId" placeholder="Loading from settings..." readonly style="color:var(--text2);">
+          </div>
+          <div class="form-group">
+            <label>Client Secret <span style="font-size:0.7rem;color:var(--text2)">(Auto-filled from OAuth App)</span></label>
+            <input type="password" id="inClientSecret" placeholder="Loading from settings..." readonly style="color:var(--text2);">
+          </div>
+          <div class="form-group">
+            <label>Refresh Token <span style="font-size:0.7rem;color:var(--text2)">(Auto-filled after Sign-in)</span></label>
+            <input type="text" id="inRefreshToken" placeholder="Click Sign in below to get this automatically">
           </div>
           <div class="form-group">
             <label>Root Folder ID (Optional)</label>
             <input type="text" id="inRootId" placeholder="root">
           </div>
           <div style="font-size:0.8rem; color:var(--text2); background:rgba(255,255,255,0.05); padding:8px; border-radius:4px; margin-top:4px;">
-            <b>Easy Google Sign-In:</b> Click below to login with Google. The Global OAuth Client ID and Secret will be used automatically.
+            <b>Easy Google Sign-In:</b> Click below to login with Google and automatically get your Refresh Token. The Global OAuth Client ID and Secret from your <b>🔑 OAuth App</b> tab are used automatically.
           </div>
           <div style="display:flex; gap:10px; margin-top:8px;">
             <button class="btn" style="background:#fff; color:#000; font-weight:bold;" onclick="oauthSignIn(event)">
@@ -682,10 +690,18 @@ async function fetchGlobalSettings() {
       const s = await r.json();
       document.getElementById('inChunkSize').value = s.chunk_size_mb || 2;
       document.getElementById('inSpeedLimit').value = s.speed_limit_mb || 0;
-      document.getElementById('inDirectMode').checked = s.direct_download_mode || false;
+      document.getElementById('inDirectMode') && (document.getElementById('inDirectMode').checked = s.direct_download_mode || false);
       document.getElementById('inLinkExpiry').value = s.link_expiry_hours || 0;
       document.getElementById('inGlobalClientId').value = s.oauth_client_id || "";
       document.getElementById('inGlobalClientSecret').value = s.oauth_client_secret || "";
+      // Also auto-fill into Add Drive form if it's the first load
+      const addCid = document.getElementById('inClientId');
+      const addSec = document.getElementById('inClientSecret');
+      if(addCid && !addCid.value) addCid.value = s.oauth_client_id || "";
+      if(addSec && !addSec.value) addSec.value = s.oauth_client_secret || "";
+      // Update redirect URI display
+      const lblSettings = document.getElementById('lblSettingsRedirectUri');
+      if(lblSettings) lblSettings.textContent = window.location.origin + "/preview.html";
     }
   } catch(e) { console.error("Could not fetch settings", e); }
 }
@@ -771,12 +787,18 @@ async function saveNewDrive() {
   const btn = event.target;
   btn.textContent = 'Saving...';
   try {
+    const clientId = document.getElementById('inClientId').value.trim();
+    const clientSecret = document.getElementById('inClientSecret').value.trim();
+    const refreshToken = document.getElementById('inRefreshToken').value.trim();
+
+    if(!refreshToken) throw new Error('Please Sign in with Google first to get a Refresh Token, or enter one manually.');
+
     const body = {
-      name: document.getElementById('inName').value,
-      refresh_token: document.getElementById('inRefreshToken').value,
+      name: document.getElementById('inName').value.trim() || 'My Drive',
+      refresh_token: refreshToken,
       root_id: document.getElementById('inRootId').value || 'root',
-      client_id: '',
-      client_secret: ''
+      client_id: clientId,
+      client_secret: clientSecret
     };
 
     const url = editingDriveId ? `${PROXY}/drives/${editingDriveId}` : `${PROXY}/drives`;
@@ -791,7 +813,7 @@ async function saveNewDrive() {
     const d = await r.json();
     if(d.error) throw new Error(d.error);
 
-    alert(editingDriveId ? 'Drive Updated!' : 'Drive Added!');
+    alert(editingDriveId ? 'Drive Updated!' : 'Drive Added Successfully! 🎉');
 
     document.getElementById('addDriveForm').classList.remove('open');
     resetAddForm();
@@ -811,7 +833,12 @@ function resetAddForm() {
   document.getElementById('inName').value = '';
   document.getElementById('inRefreshToken').value = '';
   document.getElementById('inRootId').value = 'root';
-  document.getElementById('saveDriveBtn').textContent = 'Save manually';
+  document.getElementById('saveDriveBtn').textContent = 'Save Drive';
+  // Auto-fill client ID and secret from global settings
+  const cid = document.getElementById('inGlobalClientId');
+  const csec = document.getElementById('inGlobalClientSecret');
+  if(cid && document.getElementById('inClientId')) document.getElementById('inClientId').value = cid.value;
+  if(csec && document.getElementById('inClientSecret')) document.getElementById('inClientSecret').value = csec.value;
 }
 
 function openEditForm(id) {
@@ -1459,11 +1486,21 @@ function handleOAuthCallback() {
       }).then(r => r.json()).then(d => {
          if(d.error) return alert("OAuth Error: " + d.error);
          
+         // Open settings on Drives tab and open Add Drive form
          openSettings();
-         switchTab('tab-drives', document.querySelector('.settings-tab'));
-         toggleAddForm();
+         // Switch to Drives tab
+         const drivesTab = document.querySelector('.settings-tab');
+         if(drivesTab) switchTab('tab-drives', drivesTab);
+         // Open add form and auto-fill
+         document.getElementById('addDriveForm').classList.add('open');
          document.getElementById('inRefreshToken').value = d.refresh_token;
-         alert("Google Drive authorized successfully! Enter a Drive Name and click Save.");
+         // Auto-fill client credentials from global settings
+         const cid = document.getElementById('inGlobalClientId');
+         const csec = document.getElementById('inGlobalClientSecret');
+         if(cid) document.getElementById('inClientId').value = cid.value;
+         if(csec) document.getElementById('inClientSecret').value = csec.value;
+         
+         alert("✅ Google Drive authorized! Your Refresh Token is filled in.\nEnter a Drive Name and click 'Save Drive' to finish!");
       }).catch(err => alert("OAuth Exchange Failed: " + err.message));
   }
 }
