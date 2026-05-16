@@ -755,6 +755,10 @@ async function saveNewDrive() {
     const url = editingDriveId ? `${PROXY}/drives/${editingDriveId}` : `${PROXY}/drives`;
     const method = editingDriveId ? 'PUT' : 'POST';
 
+    // Save Client ID and Secret to localStorage for convenience
+    localStorage.setItem('saved_client_id', body.client_id);
+    localStorage.setItem('saved_client_secret', body.client_secret);
+
     const pass = localStorage.getItem('drive_pass') || '';
     const r = await fetch(`${url}?admin_pass=${pass}`, {
       method: method,
@@ -782,11 +786,11 @@ function resetAddForm() {
   editingDriveId = null;
   document.getElementById('formHeader').textContent = 'Add New Google Drive';
   document.getElementById('inName').value = '';
-  document.getElementById('inClientId').value = '';
-  document.getElementById('inClientSecret').value = '';
+  document.getElementById('inClientId').value = localStorage.getItem('saved_client_id') || '';
+  document.getElementById('inClientSecret').value = localStorage.getItem('saved_client_secret') || '';
   document.getElementById('inRefreshToken').value = '';
   document.getElementById('inRootId').value = 'root';
-  document.getElementById('saveDriveBtn').textContent = 'Save Drive';
+  document.getElementById('saveDriveBtn').textContent = 'Save manually';
 }
 
 function openEditForm(id) {
