@@ -26,7 +26,7 @@ ADMIN_PASS    = os.environ.get("ADMIN_PASS", "admin123")
 _drives:      list[dict] = []
 _token_cache: dict       = {}
 _users:       dict       = {}  # {username: {password, display_name, role}}
-_app_settings = {"chunk_size_mb": 2, "speed_limit_mb": 0.0, "link_expiry_hours": 0.0}
+_app_settings = {"chunk_size_mb": 2, "speed_limit_mb": 0.0, "link_expiry_hours": 0.0, "oauth_client_id": "", "oauth_client_secret": ""}
 _app_secret   = os.environ.get("APP_SECRET", str(uuid.uuid4()))
 _analytics:   dict       = {}
 
@@ -138,6 +138,37 @@ def load_db_drives():
         print(f"[DB] Error loading drives: {e}")
     return None
 
+def load_db_settings():
+    try:
+        if postgres_conn:
+            with postgres_conn.cursor() as cur:
+                cur.execute("SELECT drives_data FROM drivebase_config WHERE id=2")
+                row = cur.fetchone()
+                if row:
+                    return json.loads(row[0]) if row[0] else {}
+        elif mongo_col_drives is not None:
+            doc = mongo_col_drives.find_one({"_id": "settings"})
+            if doc:
+                return doc.get("data", {})
+    except Exception as e:
+        pass
+    return {}
+
+def save_db_settings(settings_dict):
+    try:
+        if postgres_conn:
+            with postgres_conn.cursor() as cur:
+                cur.execute(
+                    "INSERT INTO drivebase_config (id, drives_data) VALUES (2, %s) "
+                    "ON CONFLICT (id) DO UPDATE SET drives_data = EXCLUDED.drives_data",
+                    (json.dumps(settings_dict),)
+                )
+            postgres_conn.commit()
+        elif mongo_col_drives is not None:
+            mongo_col_drives.update_one({"_id": "settings"}, {"$set": {"data": settings_dict}}, upsert=True)
+    except Exception as e:
+        pass
+
 def save_db_drives(drives_list):
     try:
         if postgres_conn:
@@ -204,6 +235,9 @@ def save_drives():
     DRIVES_FILE.write_text(json.dumps(to_save, indent=2))
 
 load_drives()
+db_settings = load_db_settings()
+if db_settings:
+    _app_settings.update(db_settings)
 
 # ── TOKEN REFRESH ─────────────────────────────────────────────────────────────
 async def get_token(drive_id: str) -> str:
@@ -291,6 +325,8 @@ class SettingsIn(BaseModel):
     chunk_size_mb: int = 2
     speed_limit_mb: float = 0.0
     link_expiry_hours: float = 0.0
+    oauth_client_id: str = ""
+    oauth_client_secret: str = ""
 
 @app.post("/settings")
 async def update_settings(body: SettingsIn, admin_pass: str = ""):
@@ -299,6 +335,9 @@ async def update_settings(body: SettingsIn, admin_pass: str = ""):
     _app_settings["chunk_size_mb"]        = max(1, body.chunk_size_mb)
     _app_settings["speed_limit_mb"]       = max(0.0, body.speed_limit_mb)
     _app_settings["link_expiry_hours"]    = max(0.0, body.link_expiry_hours)
+    _app_settings["oauth_client_id"]      = body.oauth_client_id
+    _app_settings["oauth_client_secret"]  = body.oauth_client_secret
+    save_db_settings(_app_settings)
     return JSONResponse(_app_settings, headers=CORS)
 
 # ── DRIVES ENDPOINTS ──────────────────────────────────────────────────────────
@@ -319,8 +358,12 @@ class DriveIn(BaseModel):
 async def add_drive(body: DriveIn, admin_pass: str = ""):
     if admin_pass != ADMIN_PASS:
         return JSONResponse({"error": "Unauthorized"}, status_code=403)
+    
+    c_id = body.client_id or _app_settings.get("oauth_client_id", "")
+    c_sec = body.client_secret or _app_settings.get("oauth_client_secret", "")
+    
     drive_id = str(uuid.uuid4())[:8]
-    drive = {"id": drive_id, "name": body.name, "client_id": body.client_id, "client_secret": body.client_secret, "refresh_token": body.refresh_token, "root_id": body.root_id}
+    drive = {"id": drive_id, "name": body.name, "client_id": c_id, "client_secret": c_sec, "refresh_token": body.refresh_token, "root_id": body.root_id}
     _drives.append(drive)
     save_drives()
     return JSONResponse({"message": "Drive added", "id": drive_id})
@@ -492,20 +535,32 @@ async def stream_file(request: Request, drive_id: str = None, file_id: str = Non
 
 # ── OAUTH ENDPOINTS ───────────────────────────────────────────────────────────
 class OAuthExchangeIn(BaseModel):
-    client_id: str
-    client_secret: str
     code: str
     redirect_uri: str
+
+@app.get("/oauth/url")
+async def get_oauth_url(redirect_uri: str):
+    cid = _app_settings.get("oauth_client_id")
+    if not cid:
+        return JSONResponse({"error": "Global OAuth Client ID not configured in Settings."}, status_code=400, headers=CORS)
+    from urllib.parse import quote
+    url = f"https://accounts.google.com/o/oauth2/v2/auth?client_id={cid}&redirect_uri={quote(redirect_uri)}&response_type=code&scope=https://www.googleapis.com/auth/drive&access_type=offline&prompt=consent"
+    return JSONResponse({"url": url}, headers=CORS)
 
 @app.post("/oauth/exchange")
 async def oauth_exchange(body: OAuthExchangeIn, admin_pass: str = ""):
     if admin_pass != ADMIN_PASS:
         return JSONResponse({"error": "Unauthorized"}, status_code=403, headers=CORS)
     
+    cid = _app_settings.get("oauth_client_id")
+    csec = _app_settings.get("oauth_client_secret")
+    if not cid or not csec:
+        return JSONResponse({"error": "Global OAuth Client ID/Secret not configured."}, status_code=400, headers=CORS)
+    
     async with httpx.AsyncClient(timeout=30) as client:
         r = await client.post("https://oauth2.googleapis.com/token", data={
-            "client_id": body.client_id,
-            "client_secret": body.client_secret,
+            "client_id": cid,
+            "client_secret": csec,
             "code": body.code,
             "grant_type": "authorization_code",
             "redirect_uri": body.redirect_uri,
@@ -517,20 +572,9 @@ async def oauth_exchange(body: OAuthExchangeIn, admin_pass: str = ""):
         
         refresh_token = d.get("refresh_token")
         if not refresh_token:
-            return JSONResponse({"error": "No refresh token received. Make sure the app has consent."}, status_code=400, headers=CORS)
+            return JSONResponse({"error": "No refresh token received. Make sure you haven't granted consent before, or remove access from Google Account and try again."}, status_code=400, headers=CORS)
             
         return JSONResponse({"refresh_token": refresh_token}, headers=CORS)
-
-@app.get("/oauth_callback")
-async def oauth_callback(code: str = "", error: str = ""):
-    html = f"""
-    <!DOCTYPE html>
-    <html><body><script>
-    window.opener.postMessage({{ type: "oauth_callback", code: "{code}", error: "{error}" }}, "*");
-    window.close();
-    </script></body></html>
-    """
-    return HTMLResponse(html)
 
 # ── FRONTEND ──────────────────────────────────────────────────────────────────
 @app.get("/", response_class=HTMLResponse)
