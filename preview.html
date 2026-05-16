@@ -715,14 +715,23 @@ async function fetchAnalytics() {
 
 async function saveGlobalSettings() {
   const btn = event.target;
+  const isOAuthSave = btn.textContent.includes('OAuth App');
+  
   btn.textContent = "Applying...";
   try {
+    const clientIdVal = document.getElementById('inGlobalClientId').value.trim();
+    const clientSecretVal = document.getElementById('inGlobalClientSecret').value.trim();
+    
+    if(isOAuthSave && (!clientIdVal || !clientSecretVal)) {
+      throw new Error("Please enter both Global OAuth Client ID and Secret before saving!");
+    }
+
     const body = {
       chunk_size_mb: parseInt(document.getElementById('inChunkSize').value) || 2,
       speed_limit_mb: parseFloat(document.getElementById('inSpeedLimit').value) || 0,
       link_expiry_hours: parseFloat(document.getElementById('inLinkExpiry').value) || 0,
-      oauth_client_id: document.getElementById('inGlobalClientId').value.trim(),
-      oauth_client_secret: document.getElementById('inGlobalClientSecret').value.trim()
+      oauth_client_id: clientIdVal,
+      oauth_client_secret: clientSecretVal
     };
     const pass = localStorage.getItem('drive_pass') || '';
     const r = await fetch(`${PROXY}/settings?admin_pass=${pass}`, {
@@ -735,7 +744,7 @@ async function saveGlobalSettings() {
   } catch(e) {
     alert(e.message);
   } finally {
-    btn.textContent = "Apply/Save Settings";
+    btn.textContent = isOAuthSave ? "Save OAuth App Settings" : "Apply/Save Settings";
   }
 }
 
