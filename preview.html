@@ -677,7 +677,7 @@ async function initApp() {
 // ── SETTINGS API ─────────────────────────────────────────────────────
 async function fetchGlobalSettings() {
   try {
-    const r = await fetch(`${PROXY}/settings`);
+    const r = await fetch(`${PROXY}/settings?_t=${Date.now()}`);
     if(r.ok) {
       const s = await r.json();
       document.getElementById('inChunkSize').value = s.chunk_size_mb || 2;
