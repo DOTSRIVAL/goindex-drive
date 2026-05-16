@@ -611,9 +611,37 @@ async def oauth_exchange(body: OAuthExchangeIn, admin_pass: str = ""):
 async def index():
     return HTMLResponse(Path("preview.html").read_text(encoding="utf-8"))
 
+@app.get("/health")
+async def health():
+    return JSONResponse({"status": "ok", "drives": len(_drives)}, headers=CORS)
+
 @app.options("/{rest:path}")
 async def options_handler():
     return Response(headers={**CORS, "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS"})
+
+# ── KEEP-ALIVE (prevents HF Space from sleeping) ──────────────────────────────
+SPACE_URL = os.environ.get("SPACE_HOST", "")
+
+async def _keep_alive():
+    """Ping self every 25 minutes to prevent Hugging Face sleep mode."""
+    await asyncio.sleep(60)  # wait 1 min after startup
+    while True:
+        try:
+            if SPACE_URL:
+                url = f"https://{SPACE_URL}/health"
+                async with httpx.AsyncClient(timeout=10) as client:
+                    r = await client.get(url)
+                    print(f"[KeepAlive] Pinged {url} → {r.status_code}")
+            else:
+                print("[KeepAlive] SPACE_HOST not set, skipping ping.")
+        except Exception as e:
+            print(f"[KeepAlive] Ping failed: {e}")
+        await asyncio.sleep(25 * 60)  # 25 minutes
+
+@app.on_event("startup")
+async def startup_event():
+    asyncio.create_task(_keep_alive())
+    print("[Startup] Keep-alive task started.")
 
 if __name__ == "__main__":
     uvicorn.run("app:app", host="0.0.0.0", port=7860, reload=False)
