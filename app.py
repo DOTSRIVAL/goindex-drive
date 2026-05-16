@@ -153,14 +153,16 @@ def load_db_settings():
             with postgres_conn.cursor() as cur:
                 cur.execute("SELECT drives_data FROM drivebase_config WHERE id=2")
                 row = cur.fetchone()
-                if row:
-                    return json.loads(row[0]) if row[0] else {}
+                if row and row[0]:
+                    data = json.loads(row[0])
+                    print(f"[DB] Loaded settings from DB: oauth_client_id={'SET' if data.get('oauth_client_id') else 'EMPTY'}")
+                    return data
         elif mongo_col_drives is not None:
             doc = mongo_col_drives.find_one({"_id": "settings"})
             if doc:
                 return doc.get("data", {})
     except Exception as e:
-        pass
+        print(f"[DB] Error loading settings: {e}")
     return {}
 
 def save_db_settings(settings_dict):
